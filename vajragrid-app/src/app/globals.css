@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0e1a;
+  --foreground: #e2e8f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Custom scrollbar for SOC dark theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* React Flow dark theme overrides */
+.react-flow__controls button {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  fill: #94a3b8 !important;
+}
+.react-flow__controls button:hover {
+  background: #334155 !important;
+}
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Alert pulse animation */
+@keyframes threat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-threat-pulse {
+  animation: threat-pulse 2s ease-in-out infinite;
+}
