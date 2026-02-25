@@ -127,7 +127,7 @@ export default function HealingTimeline({
   const hasActivity = activeEvents.length > 0 || completedEvents.length > 0;
 
   return (
-    <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-4">
+    <div data-testid="healing-timeline" className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${
