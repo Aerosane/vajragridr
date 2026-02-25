@@ -95,7 +95,7 @@ export default function CommandCenter({
           </div>
 
           {/* Alert Panel Column (1/4 width) */}
-          <div className="lg:col-span-1 h-full min-h-[500px]">
+          <div className="lg:col-span-1 max-h-[80vh] sticky top-16">
             <AlertPanel alerts={alerts} />
           </div>
         </div>

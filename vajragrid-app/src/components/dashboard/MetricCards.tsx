@@ -53,7 +53,7 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
   const metrics = [
     {
       label: 'Generation Output',
-      value: systemState ? `${systemState.totalGeneration.toFixed(2)}` : '---',
+      value: systemState?.totalGeneration != null ? `${systemState.totalGeneration.toFixed(2)}` : '---',
       unit: 'MW',
       trend: trends.gen,
       color: 'text-blue-400',
@@ -61,7 +61,7 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
     },
     {
       label: 'Operational Load',
-      value: systemState ? `${systemState.totalLoad.toFixed(2)}` : '---',
+      value: systemState?.totalLoad != null ? `${systemState.totalLoad.toFixed(2)}` : '---',
       unit: 'MW',
       trend: trends.load,
       color: 'text-indigo-400',
@@ -69,19 +69,19 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
     },
     {
       label: 'System Frequency',
-      value: systemState ? `${systemState.systemFrequency.toFixed(3)}` : '---',
+      value: systemState?.systemFrequency != null ? `${systemState.systemFrequency.toFixed(3)}` : '---',
       unit: 'Hz',
       trend: trends.freq,
-      color: systemState ? getFrequencyColor(systemState.systemFrequency) : 'text-slate-400',
-      isActive: systemState ? (systemState.systemFrequency < 49.9 || systemState.systemFrequency > 50.1) : false,
+      color: systemState?.systemFrequency != null ? getFrequencyColor(systemState.systemFrequency) : 'text-slate-400',
+      isActive: systemState?.systemFrequency != null ? (systemState.systemFrequency < 49.9 || systemState.systemFrequency > 50.1) : false,
     },
     {
       label: 'Supply Balance',
-      value: systemState ? `${(systemState.generationLoadBalance * 100).toFixed(2)}` : '---',
+      value: systemState?.generationLoadBalance != null ? `${(systemState.generationLoadBalance * 100).toFixed(2)}` : '---',
       unit: '%',
       trend: trends.balance,
-      color: systemState ? getBalanceColor(systemState.generationLoadBalance) : 'text-slate-400',
-      isActive: systemState ? Math.abs(1 - systemState.generationLoadBalance) > 0.05 : false,
+      color: systemState?.generationLoadBalance != null ? getBalanceColor(systemState.generationLoadBalance) : 'text-slate-400',
+      isActive: systemState?.generationLoadBalance != null ? Math.abs(1 - systemState.generationLoadBalance) > 0.05 : false,
     },
   ];
 

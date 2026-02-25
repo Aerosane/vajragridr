@@ -51,7 +51,7 @@ function PhaseProgress({ currentPhase }: { currentPhase: string }) {
 
 function ActiveEvent({ event }: { event: HealingEventDTO }) {
   const cfg = PHASE_CONFIG[event.phase] || PHASE_CONFIG.DETECTING;
-  const elapsed = (event.totalDurationMs / 1000).toFixed(0);
+  const elapsed = ((event.totalDurationMs ?? 0) / 1000).toFixed(0);
   const latestAction = event.actions[event.actions.length - 1];
 
   return (
@@ -99,7 +99,7 @@ function ActiveEvent({ event }: { event: HealingEventDTO }) {
 }
 
 function CompletedEvent({ event }: { event: HealingEventDTO }) {
-  const duration = (event.totalDurationMs / 1000).toFixed(0);
+  const duration = ((event.totalDurationMs ?? 0) / 1000).toFixed(0);
 
   return (
     <div className="border border-emerald-800/30 rounded-lg p-2.5 bg-emerald-950/20">

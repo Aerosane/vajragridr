@@ -72,7 +72,7 @@ export function usePollingGridData() {
             seenAlertIds.current.add(a.id);
           }
           if (newAlerts.length > 0) {
-            setAlerts((prev) => [...newAlerts, ...prev].slice(0, 500));
+            setAlerts((prev) => [...newAlerts, ...prev].slice(0, 100));
           }
         }
       } catch {
