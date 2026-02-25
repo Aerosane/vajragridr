@@ -18,18 +18,20 @@ export default function SystemStatusBar({ systemState, alertCount }: SystemStatu
       setCurrentTime(new Date());
     }, 1000);
 
-    let uptimeInterval: NodeJS.Timeout;
+    let uptimeInterval: NodeJS.Timeout | undefined;
     if (systemState) {
       uptimeInterval = setInterval(() => {
         setUptime((prev) => prev + 1);
       }, 1000);
+    } else {
+      setUptime(0);
     }
     
     return () => {
       clearInterval(clockInterval);
       if (uptimeInterval) clearInterval(uptimeInterval);
     };
-  }, [!!systemState]);
+  }, [systemState]);
 
   const formatUptime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);

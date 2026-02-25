@@ -86,6 +86,7 @@ export function ensureDetectionPipeline() {
         // Generate ML-specific alerts for anomalies
         for (const ml of mlResults) {
           if (ml.isAnomaly) {
+            const FEATURE_NAMES = ['voltage', 'frequency', 'activePower', 'reactivePower', 'voltageAngle', 'powerFactor'];
             const mlAlert: ThreatAlert = {
               id: `ml-${ml.busId}-${Date.now()}`,
               timestamp: new Date().toISOString(),
@@ -97,7 +98,7 @@ export function ensureDetectionPipeline() {
               detectionLayers: ['ML'],
               confidence: ml.confidence,
               indicators: ml.features.map((v, i) => ({
-                parameter: ['voltage', 'frequency', 'activePower', 'reactivePower', 'voltageAngle', 'powerFactor'][i],
+                parameter: FEATURE_NAMES[i] || `feature_${i}`,
                 busId: ml.busId,
                 expected: 0,
                 actual: v,

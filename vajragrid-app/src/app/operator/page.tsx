@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
 import HealingTimeline from '@/components/dashboard/HealingTimeline';
 import { usePollingGridData } from '@/hooks/usePollingGridData';
@@ -32,6 +32,14 @@ export default function OperatorPage() {
   const [demoStep, setDemoStep] = useState(-1);
   const [demoLog, setDemoLog] = useState<string[]>([]);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+  }, []);
 
   const startDemo = useCallback(async () => {
     setDemoRunning(true);
