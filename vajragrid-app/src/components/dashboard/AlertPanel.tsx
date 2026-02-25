@@ -10,7 +10,7 @@ interface AlertPanelProps {
 export default function AlertPanel({ alerts }: AlertPanelProps) {
   const sortedAlerts = [...alerts].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  ).slice(0, 50);
+  ).slice(0, 20);
 
   const getSeverityStyle = (severity: string) => {
     switch (severity) {
@@ -36,7 +36,7 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/95 border border-slate-700 rounded-lg overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-full max-h-[80vh] bg-slate-900/95 border border-slate-700 rounded-lg overflow-hidden shadow-2xl">
       <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
         <h2 className="text-sm font-bold uppercase tracking-widest text-slate-100 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -52,8 +52,8 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
             <p className="text-[10px] uppercase mt-1">System nominal</p>
           </div>
         ) : (
-          sortedAlerts.map((alert) => (
-            <div key={alert.id} className="p-3 bg-slate-950/40 border border-slate-800 rounded hover:border-slate-600 transition-colors group">
+          sortedAlerts.map((alert, idx) => (
+            <div key={`${alert.id}-${idx}`} className="p-3 bg-slate-950/40 border border-slate-800 rounded hover:border-slate-600 transition-colors group">
               <div className="flex justify-between items-start mb-2">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-black border ${getSeverityStyle(alert.severity)}`}>
                   {alert.severity}
@@ -69,8 +69,8 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
               
               <div className="text-[11px] text-slate-400 space-y-1">
                 <div className="flex justify-between">
-                  <span>Affected: <span className="text-slate-200">{alert.affectedAssets.join(', ')}</span></span>
-                  <span className="text-blue-400 font-mono">CONF: {(alert.confidence * 100).toFixed(0)}%</span>
+                  <span>Affected: <span className="text-slate-200">{alert.affectedAssets?.join(', ') ?? '—'}</span></span>
+                  <span className="text-blue-400 font-mono">CONF: {((alert.confidence ?? 0) * 100).toFixed(0)}%</span>
                 </div>
                 <p className="text-slate-500 text-[10px] leading-relaxed line-clamp-2 italic">
                   {alert.description}

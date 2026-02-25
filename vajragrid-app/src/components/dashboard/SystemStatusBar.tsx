@@ -10,9 +10,10 @@ interface SystemStatusBarProps {
 
 export default function SystemStatusBar({ systemState, alertCount }: SystemStatusBarProps) {
   const [uptime, setUptime] = useState(0);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setCurrentTime(new Date());
     const clockInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -104,10 +105,10 @@ export default function SystemStatusBar({ systemState, alertCount }: SystemStatu
 
         <div className="flex flex-col items-end">
           <div className="text-xs font-mono font-bold text-slate-300">
-            {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+            {currentTime ? currentTime.toLocaleTimeString('en-US', { hour12: false }) : '--:--:--'}
           </div>
           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">
-            {currentTime.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+            {currentTime ? currentTime.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '---'}
           </div>
         </div>
       </div>
