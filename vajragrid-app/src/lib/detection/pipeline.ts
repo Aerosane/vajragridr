@@ -11,6 +11,7 @@ import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
 import { runMLDetection, isMLReady } from './MLDetector';
 import { processAlerts, tickHealing, resetShield } from '@/lib/healing';
+import { publish } from '@/lib/events/EventBus';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
 interface PipelineState {
@@ -47,6 +48,7 @@ export function ensureDetectionPipeline() {
   engine.setCallbacks({
     onTelemetry: (telemetry: GridTelemetry[]) => {
       state.latestTelemetry = telemetry;
+      publish('telemetry', telemetry);
 
       // Layer 1: Rule-based detection
       const allRuleViolations = [];
@@ -113,6 +115,7 @@ export function ensureDetectionPipeline() {
         }
         if (alerts.length > 0) {
           state.alertHistory = [...alerts, ...state.alertHistory].slice(0, 500);
+          for (const a of alerts) publish('alert', a);
         }
       }).catch(() => {/* ML layer graceful degradation */});
 
@@ -120,6 +123,7 @@ export function ensureDetectionPipeline() {
       const nonMLAlerts = alerts.filter(a => !a.detectionLayers.includes('ML'));
       if (nonMLAlerts.length > 0) {
         state.alertHistory = [...nonMLAlerts, ...state.alertHistory].slice(0, 500);
+        for (const a of nonMLAlerts) publish('alert', a);
       }
 
       // ─── VajraShield: Feed alerts to self-healing engine ───
@@ -127,6 +131,12 @@ export function ensureDetectionPipeline() {
         processAlerts(alerts);
       }
       tickHealing();
+    },
+    onSystemState: (data) => {
+      publish('system_state', data);
+    },
+    onStateChange: (data) => {
+      publish('simulation_state', data);
     },
   });
 }

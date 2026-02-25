@@ -12,21 +12,24 @@ export function useGridData() {
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
   const [connected, setConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectRef = useRef<(() => void) | null>(null);
 
   const connect = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
-    wsRef.current = ws;
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
 
-    ws.onopen = () => {
+    const es = new EventSource('/api/stream');
+    eventSourceRef.current = es;
+
+    es.onopen = () => {
       setConnected(true);
-      console.log('[VajraGrid] WebSocket connected');
+      console.log('[VajraGrid] SSE connected');
     };
 
-    ws.onmessage = (event) => {
+    es.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
 
@@ -56,18 +59,15 @@ export function useGridData() {
             break;
         }
       } catch (err) {
-        console.error('[VajraGrid] Failed to parse message:', err);
+        console.error('[VajraGrid] Failed to parse SSE message:', err);
       }
     };
 
-    ws.onclose = () => {
+    es.onerror = () => {
       setConnected(false);
-      console.log('[VajraGrid] WebSocket disconnected, reconnecting...');
+      es.close();
+      console.log('[VajraGrid] SSE disconnected, reconnecting...');
       reconnectTimer.current = setTimeout(() => connectRef.current?.(), 2000);
-    };
-
-    ws.onerror = () => {
-      ws.close();
     };
   }, []);
 
@@ -78,26 +78,34 @@ export function useGridData() {
   useEffect(() => {
     connect();
     return () => {
-      if (wsRef.current) wsRef.current.close();
+      if (eventSourceRef.current) eventSourceRef.current.close();
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
   }, [connect]);
 
-  const sendCommand = useCallback((type: string, data?: unknown) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type, data }));
+  // Commands go via REST (SSE is server→client only)
+  const sendCommand = useCallback(async (endpoint: string, body?: unknown) => {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return res.json();
+    } catch (err) {
+      console.error(`[VajraGrid] Command failed: ${endpoint}`, err);
     }
   }, []);
 
-  const startSimulation = useCallback(() => sendCommand('simulation:start'), [sendCommand]);
-  const stopSimulation = useCallback(() => sendCommand('simulation:stop'), [sendCommand]);
-  const resetSimulation = useCallback(() => sendCommand('simulation:reset'), [sendCommand]);
+  const startSimulation = useCallback(() => sendCommand('/api/simulation/start'), [sendCommand]);
+  const stopSimulation = useCallback(() => sendCommand('/api/simulation/stop'), [sendCommand]);
+  const resetSimulation = useCallback(() => sendCommand('/api/simulation/reset'), [sendCommand]);
   const injectAttack = useCallback(
-    (config: AttackConfig) => sendCommand('simulation:attack', config),
+    (config: AttackConfig) => sendCommand('/api/simulation/attack', config),
     [sendCommand]
   );
   const setSpeed = useCallback(
-    (speed: number) => sendCommand('simulation:speed', speed),
+    (speed: number) => sendCommand('/api/simulation/speed', { speed }),
     [sendCommand]
   );
 
