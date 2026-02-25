@@ -1,0 +1,22 @@
+{
+  "features": [
+    "voltage",
+    "frequency",
+    "activePower",
+    "reactivePower",
+    "voltageAngle",
+    "powerFactor"
+  ],
+  "n_features": 6,
+  "input_name": "float_input",
+  "output_names": [
+    "label",
+    "scores",
+    "score_samples"
+  ],
+  "normal_score_mean": -0.47228314937093385,
+  "normal_score_std": 0.03752585540087223,
+  "threshold": -0.5405904472047821,
+  "training_samples": 50000,
+  "attack_detection_rate": 0.642
+}

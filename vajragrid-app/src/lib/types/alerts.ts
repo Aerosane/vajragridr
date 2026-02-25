@@ -4,6 +4,7 @@ export type ThreatCategory =
   | 'LOAD_MANIPULATION'
   | 'SENSOR_TAMPERING'
   | 'SMART_METER_COMPROMISE'
+  | 'ANOMALOUS_BEHAVIOR'
   | 'UNKNOWN_ANOMALY';
 
 export type AlertSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';

@@ -33,14 +33,42 @@ export default function CommandCenter({
       {/* Top Status Bar - Full Width */}
       <SystemStatusBar systemState={systemState} alertCount={alertCount} />
 
-      <main className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
+      <main className="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
         {/* Metric Cards Row */}
-        <MetricCards systemState={systemState} />
+        <div className="w-full">
+          <MetricCards systemState={systemState} />
+        </div>
+
+        {/* Header with Title and System State */}
+        <div className="flex justify-between items-center px-4">
+          <div className="space-y-1">
+            <h1 className="text-xl font-black uppercase tracking-[0.3em] text-slate-100 flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
+              VajraGrid Command Center
+            </h1>
+            <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest pl-4">
+              Real-time Critical Infrastructure Security Intelligence
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest bg-slate-900/40 border border-slate-800/50 px-4 py-2 rounded-full backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-slate-400">Security Node:</span>
+              <span className="text-emerald-500">Active</span>
+            </div>
+            <div className="w-px h-3 bg-slate-800" />
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">ML Layer:</span>
+              <span className="text-blue-500">Analyzing</span>
+            </div>
+          </div>
+        </div>
 
         {/* Main Content Grid: Topology, Charts and Alerts */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
-          {/* Main Visualization Column (2/3 width) */}
-          <div className="lg:col-span-2 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
+          {/* Main Visualization Column (3/4 width) */}
+          <div className="lg:col-span-3 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-1">
             {/* Real-time Topology Map */}
             <div className="w-full">
               <GridTopologyMap 
@@ -50,18 +78,20 @@ export default function CommandCenter({
             </div>
             
             {/* Historical Charts */}
-            <TelemetryCharts telemetryHistory={telemetryHistory} />
+            <div className="w-full pb-6">
+              <TelemetryCharts telemetryHistory={telemetryHistory} />
+            </div>
           </div>
 
-          {/* Alert Panel Column (1/3 width) */}
-          <div className="lg:col-span-1 h-full min-h-[400px]">
+          {/* Alert Panel Column (1/4 width) */}
+          <div className="lg:col-span-1 h-full min-h-[500px]">
             <AlertPanel alerts={alerts} />
           </div>
         </div>
       </main>
 
       {/* Footer Branding */}
-      <footer className="px-6 py-2 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+      <footer className="px-6 py-2.5 bg-slate-950/80 backdrop-blur-md border-t border-slate-900 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-600 rounded-sm transform rotate-45" />
           <span className="text-xs font-black tracking-tighter uppercase">VajraGrid <span className="text-blue-500 font-normal">v1.0.4-HACKATHON</span></span>

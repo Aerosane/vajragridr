@@ -47,12 +47,12 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
   // Node border and glow based on alerts
   const statusClasses = useMemo(() => {
     if (alertSeverity === 'CRITICAL') {
-      return 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]';
+      return 'border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-node-attack';
     }
     if (alertSeverity === 'MEDIUM') {
       return 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]';
     }
-    return 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
+    return 'border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
   }, [alertSeverity]);
 
   return (

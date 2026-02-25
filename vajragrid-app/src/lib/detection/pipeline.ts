@@ -1,12 +1,14 @@
 /**
  * Detection Pipeline — wires SimulationEngine → Detection → Alerts
  * Uses globalThis to survive Next.js dev mode module reloading.
+ * 4-layer detection: Rules → Physics → Statistical → ML (ONNX)
  */
 import { getSimulationEngine } from '@/lib/simulation/SimulationEngine';
 import { runRules } from './RuleEngine';
 import { runPhysicsChecks } from './PhysicsEngine';
 import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
+import { runMLDetection, isMLReady } from './MLDetector';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
 interface PipelineState {
@@ -14,6 +16,7 @@ interface PipelineState {
   previousReadings: Map<string, GridTelemetry>;
   alertHistory: ThreatAlert[];
   latestTelemetry: GridTelemetry[];
+  mlAnomalies: { busId: string; score: number; isAnomaly: boolean; confidence: number }[];
   initialized: boolean;
 }
 
@@ -26,6 +29,7 @@ function getState(): PipelineState {
       previousReadings: new Map(),
       alertHistory: [],
       latestTelemetry: [],
+      mlAnomalies: [],
       initialized: false,
     };
   }
@@ -71,10 +75,48 @@ export function ensureDetectionPipeline() {
         correlations.set(`${b1}-${b2}`, state.statDetector.getCrossCorrelation(b1, b2));
       }
 
-      // Fuse all layers → alerts
+      // Fuse layers 1-3 → alerts
       const alerts = classifyThreats(allRuleViolations, physicsViolations, { anomalies, cusumAlerts, correlations }, telemetry);
-      if (alerts.length > 0) {
-        state.alertHistory = [...alerts, ...state.alertHistory].slice(0, 500);
+
+      // Layer 4: ML anomaly detection (async, non-blocking)
+      runMLDetection(telemetry).then(mlResults => {
+        state.mlAnomalies = mlResults;
+        // Generate ML-specific alerts for anomalies
+        for (const ml of mlResults) {
+          if (ml.isAnomaly) {
+            const mlAlert: ThreatAlert = {
+              id: `ml-${ml.busId}-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              severity: ml.confidence > 0.8 ? 'CRITICAL' : ml.confidence > 0.6 ? 'HIGH' : 'MEDIUM',
+              threatCategory: 'ANOMALOUS_BEHAVIOR',
+              title: `ML Anomaly Detected at ${ml.busId}`,
+              description: `Isolation Forest model detected anomalous behavior (score: ${ml.score.toFixed(4)}, confidence: ${(ml.confidence * 100).toFixed(0)}%). Pattern deviates from learned normal grid operation.`,
+              affectedAssets: [ml.busId],
+              detectionLayers: ['ML'],
+              confidence: ml.confidence,
+              indicators: ml.features.map((v, i) => ({
+                parameter: ['voltage', 'frequency', 'activePower', 'reactivePower', 'voltageAngle', 'powerFactor'][i],
+                busId: ml.busId,
+                expected: 0,
+                actual: v,
+                deviation: 'ML anomaly',
+              })),
+              recommendation: 'Cross-reference with rule-based and physics detections. Investigate bus telemetry for coordinated attack patterns.',
+              mitreTactic: 'TA0040',
+              status: 'ACTIVE',
+            };
+            alerts.push(mlAlert);
+          }
+        }
+        if (alerts.length > 0) {
+          state.alertHistory = [...alerts, ...state.alertHistory].slice(0, 500);
+        }
+      }).catch(() => {/* ML layer graceful degradation */});
+
+      // Also add non-ML alerts immediately (don't wait for ML)
+      const nonMLAlerts = alerts.filter(a => !a.detectionLayers.includes('ML'));
+      if (nonMLAlerts.length > 0) {
+        state.alertHistory = [...nonMLAlerts, ...state.alertHistory].slice(0, 500);
       }
     },
   });
@@ -86,6 +128,10 @@ export function getLatestTelemetry(): GridTelemetry[] {
 
 export function getAlertHistory(): ThreatAlert[] {
   return getState().alertHistory;
+}
+
+export function getMLStatus(): { ready: boolean; anomalies: PipelineState['mlAnomalies'] } {
+  return { ready: isMLReady(), anomalies: getState().mlAnomalies };
 }
 
 export function resetPipeline() {
