@@ -248,7 +248,7 @@ export default function GridTopologyMap({
   }, [latestTelemetry, alerts, shield, setNodes, setEdges]);
 
   return (
-    <div className="w-full h-full min-h-[550px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800/50 relative">
+    <div data-testid="grid-topology" className="w-full h-full min-h-[550px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800/50 relative">
       <div className="absolute top-4 left-4 z-10">
         <div className="flex items-center gap-4 bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 px-3 py-1.5 rounded-lg text-[10px] uppercase font-bold tracking-wider">
           <div className="flex items-center gap-1.5 text-emerald-400">
