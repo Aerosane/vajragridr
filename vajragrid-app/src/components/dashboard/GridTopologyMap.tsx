@@ -15,6 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { GridTelemetry, ThreatAlert, BusType } from '@/lib/types';
+import type { ShieldData } from '@/hooks/usePollingGridData';
 
 interface BusNodeData {
   id: string;
@@ -22,10 +23,12 @@ interface BusNodeData {
   type: BusType;
   telemetry?: GridTelemetry;
   alertSeverity?: 'CRITICAL' | 'MEDIUM' | 'LOW';
+  healingPhase?: string;
+  isIsolated?: boolean;
 }
 
 const BusNode = ({ data }: { data: BusNodeData }) => {
-  const { id, name, type, telemetry, alertSeverity } = data;
+  const { id, name, type, telemetry, alertSeverity, healingPhase, isIsolated } = data;
   
   const voltage = telemetry?.voltage ?? 0;
   const frequency = telemetry?.frequency ?? 0;
@@ -34,7 +37,9 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
 
   // Voltage color logic: green if normal 218-242, amber if warning, red if critical
   let voltageColor = 'text-emerald-400';
-  if (voltage > 0) {
+  if (isIsolated) {
+    voltageColor = 'text-slate-600';
+  } else if (voltage > 0) {
     if (voltage < 210 || voltage > 250) {
       voltageColor = 'text-red-400';
     } else if (voltage < 218 || voltage > 242) {
@@ -44,8 +49,20 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
     voltageColor = 'text-slate-500';
   }
 
-  // Node border and glow based on alerts
+  // Node border and glow — healing phases override alert styling
   const statusClasses = useMemo(() => {
+    if (healingPhase === 'RESTORED') {
+      return 'border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.6)] animate-shield-healed';
+    }
+    if (healingPhase === 'ISOLATING' || healingPhase === 'REROUTING') {
+      return 'border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.5)] animate-pulse';
+    }
+    if (healingPhase === 'MONITORING' || healingPhase === 'RESTORING') {
+      return 'border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]';
+    }
+    if (isIsolated) {
+      return 'border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.5)] opacity-60';
+    }
     if (alertSeverity === 'CRITICAL') {
       return 'border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-node-attack';
     }
@@ -53,7 +70,7 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
       return 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]';
     }
     return 'border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
-  }, [alertSeverity]);
+  }, [alertSeverity, healingPhase, isIsolated]);
 
   return (
     <div className={`bg-slate-900 border-2 rounded-lg p-3 min-w-[180px] text-slate-100 transition-all duration-500 ${statusClasses}`}>
@@ -93,8 +110,17 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
       <div className="mt-2 pt-2 border-t border-slate-800/50 flex items-center justify-between">
         <div className="text-[9px] text-slate-500 uppercase font-bold">Status</div>
         <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${breakerStatus === 'CLOSED' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'bg-red-500 animate-pulse'}`} />
-          <span className={`text-[10px] font-bold ${breakerStatus === 'CLOSED' ? 'text-emerald-500' : 'text-red-500'}`}>{breakerStatus}</span>
+          {healingPhase && healingPhase !== 'RESTORED' ? (
+            <>
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
+              <span className="text-[10px] font-bold text-cyan-400">SHIELD</span>
+            </>
+          ) : (
+            <>
+              <div className={`w-1.5 h-1.5 rounded-full ${breakerStatus === 'CLOSED' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'bg-red-500 animate-pulse'}`} />
+              <span className={`text-[10px] font-bold ${breakerStatus === 'CLOSED' ? 'text-emerald-500' : 'text-red-500'}`}>{breakerStatus}</span>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -124,17 +150,32 @@ const initialEdges: Edge[] = [
 
 export default function GridTopologyMap({ 
   latestTelemetry, 
-  alerts 
+  alerts,
+  shield,
 }: { 
   latestTelemetry: GridTelemetry[]; 
   alerts: ThreatAlert[];
+  shield?: ShieldData | null;
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Update nodes and edges based on telemetry and alerts
+  // Update nodes and edges based on telemetry, alerts, and shield state
   useEffect(() => {
-    // Update nodes with latest telemetry and alert status
+    const isolatedBuses = new Set(shield?.isolatedBuses || []);
+    const activeHealingMap = new Map<string, string>(); // busId → phase
+    for (const evt of (shield?.activeEvents || [])) {
+      activeHealingMap.set(evt.affectedBus, evt.phase);
+    }
+    // Show RESTORED briefly for recently completed events
+    for (const evt of (shield?.completedEvents || []).slice(0, 3)) {
+      const elapsed = Date.now() - new Date(evt.lastUpdate).getTime();
+      if (elapsed < 5000 && !activeHealingMap.has(evt.affectedBus)) {
+        activeHealingMap.set(evt.affectedBus, 'RESTORED');
+      }
+    }
+
+    // Update nodes with latest telemetry, alert status, and healing state
     setNodes((nds) =>
       nds.map((node) => {
         const telemetry = latestTelemetry.find((t) => t.busId === node.id);
@@ -157,33 +198,54 @@ export default function GridTopologyMap({
             ...node.data,
             telemetry,
             alertSeverity: highestSeverity,
+            healingPhase: activeHealingMap.get(node.id),
+            isIsolated: isolatedBuses.has(node.id),
           },
         };
       })
     );
 
-    // Update edges based on alerts on connected buses
+    // Update edges based on alerts and shield state
+    const trippedBreakers = new Set(shield?.trippedBreakers || []);
+    const reroutedLines = new Set(shield?.reroutedLines || []);
+
     setEdges((eds) =>
       eds.map((edge) => {
-        const isAffected = alerts.some(
+        const isTripped = trippedBreakers.has(edge.id);
+        const isRerouted = reroutedLines.has(edge.id);
+        const isAffected = !isTripped && !isRerouted && alerts.some(
           (a) => 
             a.status === 'ACTIVE' && 
             (a.affectedAssets.includes(edge.source) || a.affectedAssets.includes(edge.target))
         );
 
+        let stroke = '#10b981'; // green normal
+        let strokeWidth = 2;
+        let animated = true;
+        let strokeDasharray = '5 5';
+
+        if (isTripped) {
+          stroke = '#f97316';    // orange for tripped
+          strokeWidth = 3;
+          animated = false;       // no animation = no power flow
+          strokeDasharray = '3 8'; // wider gaps = disconnected
+        } else if (isRerouted) {
+          stroke = '#06b6d4';    // cyan for rerouted power
+          strokeWidth = 4;       // thicker = carrying extra load
+          animated = true;
+          strokeDasharray = '2 2'; // fast animation
+        } else if (isAffected) {
+          stroke = '#ef4444';
+        }
+
         return {
           ...edge,
-          style: {
-            ...edge.style,
-            stroke: isAffected ? '#ef4444' : '#10b981',
-            strokeWidth: 2,
-            strokeDasharray: '5 5',
-          },
-          animated: true,
+          style: { stroke, strokeWidth, strokeDasharray },
+          animated,
         };
       })
     );
-  }, [latestTelemetry, alerts, setNodes, setEdges]);
+  }, [latestTelemetry, alerts, shield, setNodes, setEdges]);
 
   return (
     <div className="w-full h-full min-h-[550px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800/50 relative">
@@ -200,6 +262,14 @@ export default function GridTopologyMap({
           <div className="flex items-center gap-1.5 text-red-400">
             <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
             Critical
+          </div>
+          <div className="flex items-center gap-1.5 text-cyan-400">
+            <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_5px_rgba(6,182,212,0.5)]" />
+            Shield
+          </div>
+          <div className="flex items-center gap-1.5 text-orange-400">
+            <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.5)]" />
+            Isolated
           </div>
         </div>
       </div>

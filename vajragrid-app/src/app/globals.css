@@ -116,3 +116,13 @@ body::before {
 .value-transition {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* VajraShield: healed bus green pulse */
+@keyframes shield-healed {
+  0% { box-shadow: 0 0 10px rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.6); }
+  50% { box-shadow: 0 0 30px rgba(16,185,129,0.8); border-color: rgba(16,185,129,1); }
+  100% { box-shadow: 0 0 10px rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.6); }
+}
+.animate-shield-healed {
+  animation: shield-healed 1.5s ease-in-out 3;
+}

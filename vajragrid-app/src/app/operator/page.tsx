@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
+import HealingTimeline from '@/components/dashboard/HealingTimeline';
 import { usePollingGridData } from '@/hooks/usePollingGridData';
 import type { AttackType } from '@/lib/types';
 
@@ -19,6 +20,7 @@ export default function OperatorPage() {
     systemState,
     alerts,
     simulationState,
+    shield,
     connected,
     startSimulation,
     stopSimulation,
@@ -236,6 +238,14 @@ export default function OperatorPage() {
               </div>
             </div>
           )}
+
+          {/* VajraShield Self-Healing Timeline */}
+          <div className="mt-4">
+            <HealingTimeline
+              activeEvents={shield?.activeEvents || []}
+              completedEvents={shield?.completedEvents || []}
+            />
+          </div>
         </div>
       </div>
     </div>

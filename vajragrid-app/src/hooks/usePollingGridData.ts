@@ -2,9 +2,19 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { GridTelemetry, SystemState, ThreatAlert, SimulationState, AttackConfig } from '@/lib/types';
+import type { HealingEventDTO } from '@/lib/healing/SelfHealingEngine';
 
 const MAX_HISTORY = 120;
 const POLL_INTERVAL = 1000;
+
+export interface ShieldData {
+  active: boolean;
+  activeEvents: HealingEventDTO[];
+  completedEvents: HealingEventDTO[];
+  trippedBreakers: string[];
+  isolatedBuses: string[];
+  reroutedLines: string[];
+}
 
 export function usePollingGridData() {
   const [telemetryHistory, setTelemetryHistory] = useState<Map<string, GridTelemetry[]>>(new Map());
@@ -12,6 +22,7 @@ export function usePollingGridData() {
   const [systemState, setSystemState] = useState<SystemState | null>(null);
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
+  const [shield, setShield] = useState<ShieldData | null>(null);
   const [connected, setConnected] = useState(false);
   const seenAlertIds = useRef(new Set<string>());
 
@@ -47,6 +58,10 @@ export function usePollingGridData() {
 
         if (data.simulationState) {
           setSimulationState(data.simulationState);
+        }
+
+        if (data.shield) {
+          setShield(data.shield);
         }
 
         if (data.alerts?.length) {
@@ -100,6 +115,7 @@ export function usePollingGridData() {
     systemState,
     alerts,
     simulationState,
+    shield,
     connected,
     startSimulation,
     stopSimulation,

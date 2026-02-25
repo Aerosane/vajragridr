@@ -2,6 +2,7 @@
 
 import CommandCenter from '@/components/dashboard/CommandCenter';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
+import HealingTimeline from '@/components/dashboard/HealingTimeline';
 import { usePollingGridData } from '@/hooks/usePollingGridData';
 
 export default function Home() {
@@ -10,6 +11,7 @@ export default function Home() {
     systemState,
     alerts,
     simulationState,
+    shield,
     connected,
     startSimulation,
     stopSimulation,
@@ -38,17 +40,22 @@ export default function Home() {
             alerts={alerts}
             telemetryHistory={telemetryHistory}
             alertCount={alerts.filter(a => a.status === 'ACTIVE').length}
+            shield={shield}
           />
         </div>
 
         {/* Operator panel (sidebar) */}
-        <div className="w-80 border-l border-slate-800 bg-slate-950 p-4 overflow-y-auto max-h-screen">
+        <div className="w-80 border-l border-slate-800 bg-slate-950 p-4 overflow-y-auto max-h-screen space-y-4">
           <AttackControlPanel
             onAttack={injectAttack}
             onStart={startSimulation}
             onStop={stopSimulation}
             onReset={resetSimulation}
             simulationState={simulationState}
+          />
+          <HealingTimeline
+            activeEvents={shield?.activeEvents || []}
+            completedEvents={shield?.completedEvents || []}
           />
         </div>
       </div>

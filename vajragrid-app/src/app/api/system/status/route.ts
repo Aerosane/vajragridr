@@ -1,5 +1,5 @@
 import { getSimulationEngine } from '@/lib/simulation/SimulationEngine';
-import { ensureDetectionPipeline, getLatestTelemetry, getAlertHistory, getMLStatus } from '@/lib/detection/pipeline';
+import { ensureDetectionPipeline, getLatestTelemetry, getAlertHistory, getMLStatus, getShieldStatus } from '@/lib/detection/pipeline';
 import { NextResponse } from 'next/server';
 
 // GET: poll for current state
@@ -7,6 +7,7 @@ export async function GET() {
   ensureDetectionPipeline();
   const engine = getSimulationEngine();
   const ml = getMLStatus();
+  const shield = getShieldStatus();
 
   return NextResponse.json({
     telemetry: getLatestTelemetry(),
@@ -14,5 +15,6 @@ export async function GET() {
     alerts: getAlertHistory().slice(0, 50),
     simulationState: engine.getState(),
     ml: { ready: ml.ready, anomalyCount: ml.anomalies.filter(a => a.isAnomaly).length },
+    shield,
   });
 }
