@@ -1,4 +1,4 @@
-import type { ThreatAlert, ThreatCategory, AlertSeverity, Indicator, AlertStatus } from '@/lib/types/alerts';
+import type { ThreatAlert, Indicator } from '@/lib/types/alerts';
 import type { GridTelemetry } from '@/lib/types/grid';
 import type { RuleViolation } from './RuleEngine';
 import type { PhysicsViolation } from './PhysicsEngine';
@@ -71,7 +71,6 @@ export function classifyThreats(
   const trips = rules.filter(r => r.ruleId === 'RULE_BREAKER_TRIP');
   trips.forEach(trip => {
     const busId = trip.busId;
-    const telemetry = getTelemetry(busId);
     
     // Check if there was any physical reason for a trip (overload, low voltage, etc.)
     const otherViolations = rules.filter(r => r.busId === busId && r.ruleId !== 'RULE_BREAKER_TRIP');

@@ -10,7 +10,7 @@ import { runPhysicsChecks } from './PhysicsEngine';
 import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
 import { runMLDetection, isMLReady } from './MLDetector';
-import { processAlerts, tickHealing, getShieldStatus, resetShield } from '@/lib/healing';
+import { processAlerts, tickHealing, resetShield } from '@/lib/healing';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
 interface PipelineState {

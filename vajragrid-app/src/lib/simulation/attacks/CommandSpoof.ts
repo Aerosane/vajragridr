@@ -9,16 +9,17 @@ import { GRID_TOPOLOGY } from '../../constants';
 export function injectCommandSpoof(
   telemetry: GridTelemetry[],
   targetBus: string,
-  _intensity: number = 0.8
+  intensity = 0.8
 ): GridTelemetry[] {
   return telemetry.map((t) => {
     if (t.busId === targetBus) {
-      // Breaker trips — bus loses primary supply
+      // Breaker trips — bus loses primary supply. Intensity scales voltage/power drop.
+      const dropFactor = 1 - (intensity * 0.55);
       return {
         ...t,
-        voltage: t.voltage * 0.55,
-        activePower: t.activePower * 0.3,
-        current: t.current * 0.3,
+        voltage: t.voltage * dropFactor,
+        activePower: t.activePower * (dropFactor * 0.6),
+        current: t.current * (dropFactor * 0.6),
         breakerStatus: 'TRIP' as const,
         lineFlows: t.lineFlows.map((lf) => ({
           ...lf,

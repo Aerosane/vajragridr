@@ -8,12 +8,12 @@ import type { GridTelemetry } from '../../types';
 export function injectSensorTamper(
   telemetry: GridTelemetry[],
   targetBus: string,
-  _intensity: number = 0.5,
+  intensity = 0.5,
   elapsedTicks: number = 0
 ): GridTelemetry[] {
-  // Drift rate: 0.08 kV per tick (second)
-  // After 60s: ~5kV drift. After 300s: ~24kV drift (clearly out of bounds)
-  const drift = 0.08 * elapsedTicks;
+  // Drift rate scales with intensity: 0.04-0.16 kV per tick
+  const driftRate = 0.04 + (intensity * 0.12);
+  const drift = driftRate * elapsedTicks;
 
   return telemetry.map((t) => {
     if (t.busId !== targetBus) return t;

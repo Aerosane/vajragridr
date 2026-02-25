@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
 import HealingTimeline from '@/components/dashboard/HealingTimeline';
 import { usePollingGridData } from '@/hooks/usePollingGridData';
@@ -17,8 +18,6 @@ const DEMO_SEQUENCE: { type: AttackType; targetBus: string; intensity: number; d
 export default function OperatorPage() {
   const {
     telemetryHistory,
-    systemState,
-    alerts,
     simulationState,
     shield,
     connected,
@@ -94,9 +93,9 @@ export default function OperatorPage() {
           </h1>
         </div>
         <div className="flex items-center gap-4">
-          <a href="/" className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider">
+          <Link href="/" className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider">
             ← Dashboard
-          </a>
+          </Link>
           <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-mono ${
             connected ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'
           }`}>

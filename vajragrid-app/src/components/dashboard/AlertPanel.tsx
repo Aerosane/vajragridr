@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ThreatAlert } from '@/lib/types';
 
 interface AlertPanelProps {
@@ -11,6 +11,13 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
   const sortedAlerts = [...alerts].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   ).slice(0, 20);
+
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getSeverityStyle = (severity: string) => {
     switch (severity) {
@@ -27,13 +34,13 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
     }
   };
 
-  const getRelativeTime = (timestamp: string) => {
-    const diff = Date.now() - new Date(timestamp).getTime();
+  const getRelativeTime = useCallback((timestamp: string) => {
+    const diff = now - new Date(timestamp).getTime();
     const seconds = Math.floor(diff / 1000);
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     return `${minutes}m ago`;
-  };
+  }, [now]);
 
   return (
     <div data-testid="alert-panel" className="flex flex-col h-full max-h-[80vh] bg-slate-900/95 border border-slate-700 rounded-lg overflow-hidden shadow-2xl">

@@ -5,9 +5,9 @@
  */
 import type { GridTelemetry } from '@/lib/types';
 
-// Model metadata (matches ml/train_model.py output)
-const MODEL_URL = '/models/anomaly_detector.onnx';
-const METADATA_URL = '/models/model_metadata.json';
+// Model paths (used by loadModel at runtime via path.join)
+const MODEL_PATH = 'public/models/anomaly_detector.onnx';
+const METADATA_PATH = 'public/models/model_metadata.json';
 
 interface ModelMetadata {
   features: string[];
@@ -68,9 +68,8 @@ async function initModel(): Promise<boolean> {
     const fs = await import('fs');
     const path = await import('path');
     
-    const modelsDir = path.join(process.cwd(), 'public', 'models');
-    const metaPath = path.join(modelsDir, 'model_metadata.json');
-    const modelPath = path.join(modelsDir, 'anomaly_detector.onnx');
+    const modelPath = path.join(process.cwd(), MODEL_PATH);
+    const metaPath = path.join(process.cwd(), METADATA_PATH);
 
     if (!fs.existsSync(modelPath)) {
       console.warn('[ML] Model file not found at', modelPath);

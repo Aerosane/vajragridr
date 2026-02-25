@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import type { GridTelemetry, SystemState, ThreatAlert, SimulationState, AttackConfig } from '@/lib/types';
 
-const SOCKET_URL = typeof window !== 'undefined' ? window.location.origin : '';
 const MAX_HISTORY = 120;
 
 export function useGridData() {
@@ -15,6 +14,7 @@ export function useGridData() {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectRef = useRef<(() => void) | null>(null);
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -63,13 +63,17 @@ export function useGridData() {
     ws.onclose = () => {
       setConnected(false);
       console.log('[VajraGrid] WebSocket disconnected, reconnecting...');
-      reconnectTimer.current = setTimeout(connect, 2000);
+      reconnectTimer.current = setTimeout(() => connectRef.current?.(), 2000);
     };
 
     ws.onerror = () => {
       ws.close();
     };
   }, []);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     connect();

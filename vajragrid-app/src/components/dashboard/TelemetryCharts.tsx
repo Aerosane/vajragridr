@@ -36,7 +36,7 @@ export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsPro
     
     const data = [];
     for (let i = 0; i < points; i++) {
-      const entry: any = {
+      const entry: Record<string, string | number> = {
         time: new Date(firstBusData[i].timestamp).toLocaleTimeString([], { hour12: false }),
         avgFreq: 0,
       };
@@ -134,8 +134,8 @@ function ChartContainer({ title, children }: { title: string; children: React.Re
   return (
     <div className="w-full h-64 bg-slate-950/50 p-4 border border-slate-700 rounded shadow-inner">
       <h3 className="text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">{title}</h3>
-      <div className="w-full h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+      <div className="w-full h-48 min-w-[200px] min-h-[150px]">
+        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={150}>
           {children}
         </ResponsiveContainer>
       </div>
