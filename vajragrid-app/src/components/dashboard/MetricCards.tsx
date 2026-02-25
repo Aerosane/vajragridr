@@ -1,35 +1,36 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { SystemState } from '@/lib/types';
 
 interface MetricCardsProps {
   systemState: SystemState | null;
 }
 
+type Trend = 'up' | 'down' | 'neutral';
+
+function compareTrend(current: number, prev: number): Trend {
+  if (current > prev) return 'up';
+  if (current < prev) return 'down';
+  return 'neutral';
+}
+
 export default function MetricCards({ systemState }: MetricCardsProps) {
-  const prevSystemState = useRef<SystemState | null>(null);
-  const [trends, setTrends] = useState<{ [key: string]: 'up' | 'down' | 'neutral' }>({});
+  const [prev, setPrev] = useState<SystemState | null>(null);
+  const [trends, setTrends] = useState<Record<string, Trend>>({});
 
-  useEffect(() => {
-    if (systemState && prevSystemState.current) {
-      const newTrends: { [key: string]: 'up' | 'down' | 'neutral' } = {};
-      
-      const compare = (current: number, prev: number) => {
-        if (current > prev) return 'up';
-        if (current < prev) return 'down';
-        return 'neutral';
-      };
-
-      newTrends.gen = compare(systemState.totalGeneration, prevSystemState.current.totalGeneration);
-      newTrends.load = compare(systemState.totalLoad, prevSystemState.current.totalLoad);
-      newTrends.freq = compare(systemState.systemFrequency, prevSystemState.current.systemFrequency);
-      newTrends.balance = compare(systemState.generationLoadBalance, prevSystemState.current.generationLoadBalance);
-
-      setTrends(newTrends);
-    }
-    prevSystemState.current = systemState;
-  }, [systemState]);
+  // React 19 pattern: derive state from props without useEffect
+  if (systemState && prev && systemState !== prev) {
+    setTrends({
+      gen: compareTrend(systemState.totalGeneration, prev.totalGeneration),
+      load: compareTrend(systemState.totalLoad, prev.totalLoad),
+      freq: compareTrend(systemState.systemFrequency, prev.systemFrequency),
+      balance: compareTrend(systemState.generationLoadBalance, prev.generationLoadBalance),
+    });
+  }
+  if (systemState !== prev) {
+    setPrev(systemState);
+  }
 
   const getTrendIcon = (trend?: 'up' | 'down' | 'neutral') => {
     if (trend === 'up') return <span className="text-emerald-500 ml-1">↑</span>;

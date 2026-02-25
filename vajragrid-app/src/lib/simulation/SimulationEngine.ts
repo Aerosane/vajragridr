@@ -1,4 +1,4 @@
-import type { GridTelemetry, SystemState, ThreatAlert, AttackConfig, SimulationState } from '../types';
+import type { GridTelemetry, SystemState, AttackConfig, SimulationState } from '../types';
 import { generateTelemetry, computeSystemState } from '../simulation/DataGenerator';
 import {
   injectFDI,

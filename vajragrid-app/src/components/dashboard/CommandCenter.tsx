@@ -105,7 +105,7 @@ export default function CommandCenter({
       <footer className="px-6 py-2.5 bg-slate-950/80 backdrop-blur-md border-t border-slate-900 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-600 rounded-sm transform rotate-45" />
-          <span className="text-xs font-black tracking-tighter uppercase">VajraGrid <span className="text-blue-500 font-normal">v1.0.0</span></span>
+          <span className="text-xs font-black tracking-tighter uppercase">VajraGrid <span className="text-blue-500 font-normal">Enterprise v1.0</span></span>
         </div>
         <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
           AI-Driven Cyber Defense for Smart Grid Infrastructure

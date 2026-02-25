@@ -1,5 +1,5 @@
 import type { GridTelemetry, LineFlow, SystemState } from '../types';
-import { GRID_TOPOLOGY, BUS_MAP, NOISE, SYSTEM } from '../constants';
+import { GRID_TOPOLOGY, NOISE, SYSTEM } from '../constants';
 import { dailyLoadFactor, solarGenerationFactor, tickToHour } from './LoadCurve';
 import { addNoise, addPercentNoise, transientNoise } from './NoiseGenerator';
 import { isBreakerTripped, isBusIsolated } from '../healing';

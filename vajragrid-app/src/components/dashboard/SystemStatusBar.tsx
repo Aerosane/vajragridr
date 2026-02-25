@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SystemState } from '@/lib/types';
 
 interface SystemStatusBarProps {
@@ -11,27 +11,40 @@ interface SystemStatusBarProps {
 export default function SystemStatusBar({ systemState, alertCount }: SystemStatusBarProps) {
   const [uptime, setUptime] = useState(0);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const uptimeRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Derive running state from prop
+  const isRunning = !!systemState;
+
+  // Clock — runs once on mount
   useEffect(() => {
-    setCurrentTime(new Date());
-    const clockInterval = setInterval(() => {
+    clockRef.current = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+    return () => { if (clockRef.current) clearInterval(clockRef.current); };
+  }, []);
 
-    let uptimeInterval: NodeJS.Timeout | undefined;
-    if (systemState) {
-      uptimeInterval = setInterval(() => {
+  // Uptime counter — starts/stops based on running state
+  useEffect(() => {
+    if (isRunning) {
+      uptimeRef.current = setInterval(() => {
         setUptime((prev) => prev + 1);
       }, 1000);
-    } else {
-      setUptime(0);
+      return () => { if (uptimeRef.current) clearInterval(uptimeRef.current); };
     }
-    
-    return () => {
-      clearInterval(clockInterval);
-      if (uptimeInterval) clearInterval(uptimeInterval);
-    };
-  }, [systemState]);
+    // Not running — reset handled by render-time check below
+    return undefined;
+  }, [isRunning]);
+
+  // Reset uptime via React 19 render-time state derivation (no ref, no effect)
+  const [prevRunning, setPrevRunning] = useState(false);
+  if (prevRunning && !isRunning) {
+    setUptime(0);
+  }
+  if (prevRunning !== isRunning) {
+    setPrevRunning(isRunning);
+  }
 
   const formatUptime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
