@@ -2,10 +2,12 @@ import type { GridTelemetry, LineFlow, SystemState } from '../types';
 import { GRID_TOPOLOGY, BUS_MAP, NOISE, SYSTEM } from '../constants';
 import { dailyLoadFactor, solarGenerationFactor, tickToHour } from './LoadCurve';
 import { addNoise, addPercentNoise, transientNoise } from './NoiseGenerator';
+import { isBreakerTripped, isBusIsolated } from '../healing';
 
 /**
  * Generates realistic "normal" grid telemetry for a given tick.
  * Each tick represents 1 minute of simulated time.
+ * VajraShield: respects breaker state — isolated buses show zero flow.
  */
 export function generateTelemetry(
   tick: number,
@@ -19,11 +21,17 @@ export function generateTelemetry(
   const telemetry: GridTelemetry[] = [];
 
   for (const bus of GRID_TOPOLOGY.buses) {
+    const busIsolated = isBusIsolated(bus.id);
     let activePower: number;
     let reactivePower: number;
     let powerFactor: number;
 
-    if (bus.type === 'SLACK') {
+    if (busIsolated) {
+      // Isolated bus: no power flow, voltage collapses
+      activePower = 0;
+      reactivePower = 0;
+      powerFactor = 0;
+    } else if (bus.type === 'SLACK') {
       // Slack bus: generates whatever is needed to balance
       const totalLoad =
         GRID_TOPOLOGY.buses
@@ -56,16 +64,19 @@ export function generateTelemetry(
     }
 
     // Voltage: nominal ± noise, slightly affected by load
+    // VajraShield: isolated bus voltage decays
     const loadEffect =
-      bus.type === 'PQ_LOAD'
+      bus.type === 'PQ_LOAD' && !busIsolated
         ? -SYSTEM.voltageRegulationCoeff * loadFactor * 5
         : 0;
-    const voltage = addNoise(
-      bus.nominalVoltage + loadEffect + transientNoise(),
-      NOISE.voltage.stdDev,
-      200,
-      260
-    );
+    const voltage = busIsolated
+      ? addNoise(0, 2, 0, 10) // Voltage collapses on isolated bus
+      : addNoise(
+          bus.nominalVoltage + loadEffect + transientNoise(),
+          NOISE.voltage.stdDev,
+          200,
+          260
+        );
 
     // Frequency: system-wide with tiny variations per bus
     const systemFreq = addNoise(SYSTEM.nominalFrequency, NOISE.frequency.stdDev, 49.5, 50.5);
@@ -86,9 +97,24 @@ export function generateTelemetry(
     );
 
     // Line flows for lines originating from this bus
+    // VajraShield: tripped breakers = zero flow
     const lineFlows: LineFlow[] = GRID_TOPOLOGY.lines
       .filter((l) => l.fromBus === bus.id || l.toBus === bus.id)
       .map((line) => {
+        const tripped = isBreakerTripped(line.id);
+        if (tripped || busIsolated) {
+          return {
+            lineId: line.id,
+            fromBus: line.fromBus,
+            toBus: line.toBus,
+            activePowerFlow: 0,
+            reactivePowerFlow: 0,
+            current: 0,
+            loadingPercent: 0,
+            losses: 0,
+          };
+        }
+
         const flowDirection = line.fromBus === bus.id ? 1 : -1;
         const flowMW =
           addPercentNoise(
@@ -131,7 +157,7 @@ export function generateTelemetry(
       powerFactor,
       lineFlows,
       transformerTemp,
-      breakerStatus: 'CLOSED',
+      breakerStatus: busIsolated ? 'TRIP' : 'CLOSED',
       meterCount: bus.meterCount,
       meterConsumption,
       dataQuality: 'GOOD',

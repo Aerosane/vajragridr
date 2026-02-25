@@ -1,7 +1,8 @@
 /**
- * Detection Pipeline — wires SimulationEngine → Detection → Alerts
+ * Detection Pipeline — wires SimulationEngine → Detection → Alerts → VajraShield
  * Uses globalThis to survive Next.js dev mode module reloading.
  * 4-layer detection: Rules → Physics → Statistical → ML (ONNX)
+ * + VajraShield: Autonomous Self-Healing Response
  */
 import { getSimulationEngine } from '@/lib/simulation/SimulationEngine';
 import { runRules } from './RuleEngine';
@@ -9,6 +10,7 @@ import { runPhysicsChecks } from './PhysicsEngine';
 import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
 import { runMLDetection, isMLReady } from './MLDetector';
+import { processAlerts, tickHealing, getShieldStatus, resetShield } from '@/lib/healing';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
 interface PipelineState {
@@ -118,6 +120,12 @@ export function ensureDetectionPipeline() {
       if (nonMLAlerts.length > 0) {
         state.alertHistory = [...nonMLAlerts, ...state.alertHistory].slice(0, 500);
       }
+
+      // ─── VajraShield: Feed alerts to self-healing engine ───
+      if (alerts.length > 0) {
+        processAlerts(alerts);
+      }
+      tickHealing();
     },
   });
 }
@@ -141,4 +149,7 @@ export function resetPipeline() {
   state.previousReadings.clear();
   state.statDetector = new StatisticalDetector();
   state.initialized = false;
+  resetShield();
 }
+
+export { getShieldStatus } from '@/lib/healing';

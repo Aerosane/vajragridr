@@ -7,12 +7,14 @@ import TelemetryCharts from './TelemetryCharts';
 import AlertPanel from './AlertPanel';
 import GridTopologyMap from './GridTopologyMap';
 import { SystemState, ThreatAlert, GridTelemetry } from '@/lib/types';
+import type { ShieldData } from '@/hooks/usePollingGridData';
 
 interface CommandCenterProps {
   systemState: SystemState | null;
   alerts: ThreatAlert[];
   telemetryHistory: Map<string, GridTelemetry[]>;
   alertCount: number;
+  shield?: ShieldData | null;
 }
 
 export default function CommandCenter({
@@ -20,6 +22,7 @@ export default function CommandCenter({
   alerts,
   telemetryHistory,
   alertCount,
+  shield,
 }: CommandCenterProps) {
   // Extract latest telemetry for each bus
   const latestTelemetry = useMemo(() => {
@@ -62,6 +65,13 @@ export default function CommandCenter({
               <span className="text-slate-400">ML Layer:</span>
               <span className="text-blue-500">Analyzing</span>
             </div>
+            <div className="w-px h-3 bg-slate-800" />
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">VajraShield:</span>
+              <span className={shield?.activeEvents?.length ? 'text-cyan-400 animate-pulse' : 'text-emerald-500'}>
+                {shield?.activeEvents?.length ? `Healing (${shield.activeEvents.length})` : 'Standby'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -73,7 +83,8 @@ export default function CommandCenter({
             <div className="w-full">
               <GridTopologyMap 
                 latestTelemetry={latestTelemetry} 
-                alerts={alerts} 
+                alerts={alerts}
+                shield={shield}
               />
             </div>
             
