@@ -14,9 +14,22 @@
     "scores",
     "score_samples"
   ],
-  "normal_score_mean": -0.47228314937093385,
-  "normal_score_std": 0.03752585540087223,
-  "threshold": -0.5405904472047821,
-  "training_samples": 50000,
-  "attack_detection_rate": 0.642
+  "normal_score_mean": -0.443181739446583,
+  "normal_score_std": 0.0323852145998815,
+  "threshold": -0.5302309404269241,
+  "training_samples": 100000,
+  "attack_detection_rate": 0.958,
+  "false_positive_rate": 0.002,
+  "model_version": "2.0",
+  "scaler_embedded": true,
+  "attack_types_validated": [
+    "FDI (V+bias)",
+    "FDI (V-bias)",
+    "Freq manip",
+    "MaDIoT surge",
+    "Cmd spoof",
+    "Sensor freeze",
+    "Multi-vector",
+    "Replay"
+  ]
 }
