@@ -15,6 +15,7 @@ interface CommandCenterProps {
   telemetryHistory: Map<string, GridTelemetry[]>;
   alertCount: number;
   shield?: ShieldData | null;
+  simulationRunning: boolean;
 }
 
 export default function CommandCenter({
@@ -23,6 +24,7 @@ export default function CommandCenter({
   telemetryHistory,
   alertCount,
   shield,
+  simulationRunning,
 }: CommandCenterProps) {
   // Extract latest telemetry for each bus
   const latestTelemetry = useMemo(() => {
@@ -34,7 +36,7 @@ export default function CommandCenter({
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0e1a] text-slate-100">
       {/* Top Status Bar - Full Width */}
-      <SystemStatusBar systemState={systemState} alertCount={alertCount} />
+      <SystemStatusBar systemState={systemState} alertCount={alertCount} simulationRunning={simulationRunning} />
 
       <main className="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
         {/* Metric Cards Row */}

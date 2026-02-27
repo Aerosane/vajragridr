@@ -18,12 +18,12 @@ export interface ShieldData {
 
 export function usePollingGridData() {
   const [telemetryHistory, setTelemetryHistory] = useState<Map<string, GridTelemetry[]>>(new Map());
-  const [latestTelemetry, setLatestTelemetry] = useState<GridTelemetry[]>([]);
   const [systemState, setSystemState] = useState<SystemState | null>(null);
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
   const [shield, setShield] = useState<ShieldData | null>(null);
   const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const seenAlertIds = useRef(new Set<string>());
 
   // Poll for data
@@ -38,9 +38,9 @@ export function usePollingGridData() {
 
         if (!active) return;
         setConnected(true);
+        setError(null);
 
         if (data.telemetry?.length) {
-          setLatestTelemetry(data.telemetry);
           setTelemetryHistory((prev) => {
             const next = new Map(prev);
             for (const t of data.telemetry as GridTelemetry[]) {
@@ -77,6 +77,7 @@ export function usePollingGridData() {
         }
       } catch {
         setConnected(false);
+        setError('Connection lost — retrying...');
       }
     };
 
@@ -111,12 +112,12 @@ export function usePollingGridData() {
 
   return {
     telemetryHistory,
-    latestTelemetry,
     systemState,
     alerts,
     simulationState,
     shield,
     connected,
+    error,
     startSimulation,
     stopSimulation,
     resetSimulation,

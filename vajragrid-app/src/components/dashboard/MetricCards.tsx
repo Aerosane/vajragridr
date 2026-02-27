@@ -86,6 +86,24 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
     },
   ];
 
+  const getSparklineWidth = (metric: typeof metrics[0]) => {
+    if (!systemState) return '0%';
+    switch (metric.label) {
+      case 'Generation Output':
+        return `${Math.min(100, (systemState.totalGeneration / 150) * 100)}%`;
+      case 'Operational Load':
+        return `${Math.min(100, (systemState.totalLoad / 150) * 100)}%`;
+      case 'System Frequency': {
+        const deviation = Math.abs(systemState.systemFrequency - 50) / 1;
+        return `${Math.min(100, (1 - deviation) * 100)}%`;
+      }
+      case 'Supply Balance':
+        return `${Math.min(100, systemState.generationLoadBalance * 100)}%`;
+      default:
+        return '0%';
+    }
+  };
+
   return (
     <div data-testid="metric-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-2">
       {metrics.map((metric, idx) => (
@@ -108,11 +126,11 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
             <span className="text-[10px] font-bold text-slate-600 uppercase">{metric.unit}</span>
           </div>
           
-          {/* Subtle sparkline placeholder or decorative element */}
+          {/* Sparkline bar reflecting actual metric proportion */}
           <div className="mt-3 h-[2px] w-full bg-slate-800 rounded-full overflow-hidden">
             <div 
               className={`h-full bg-current ${metric.color} opacity-40 transition-all duration-1000 ease-in-out`}
-              style={{ width: systemState ? '70%' : '0%' }}
+              style={{ width: getSparklineWidth(metric) }}
             />
           </div>
         </div>

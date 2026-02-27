@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
 import HealingTimeline from '@/components/dashboard/HealingTimeline';
 import { usePollingGridData } from '@/hooks/usePollingGridData';
+import { BUS_NAMES } from '@/lib/constants';
 import type { AttackType } from '@/lib/types';
 
 const DEMO_SEQUENCE: { type: AttackType; targetBus: string; intensity: number; delay: number; label: string }[] = [
@@ -21,6 +22,7 @@ export default function OperatorPage() {
     simulationState,
     shield,
     connected,
+    error,
     startSimulation,
     stopSimulation,
     resetSimulation,
@@ -105,6 +107,13 @@ export default function OperatorPage() {
         </div>
       </header>
 
+      {/* Error banner */}
+      {error && !connected && (
+        <div className="bg-red-900/50 border-b border-red-700 px-6 py-2 text-xs font-mono text-red-400">
+          ⚠ {error}
+        </div>
+      )}
+
       <div className="flex p-6 gap-6">
         {/* Left: Attack Controls */}
         <div className="w-96 flex flex-col gap-6">
@@ -183,7 +192,7 @@ export default function OperatorPage() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="text-[10px] font-bold text-slate-500">{t.busId}</div>
-                      <div className="font-bold text-sm">{t.busId === 'BUS-001' ? 'Indrapura' : t.busId === 'BUS-002' ? 'Vajra Solar' : t.busId === 'BUS-003' ? 'Shakti Nagar' : t.busId === 'BUS-004' ? 'Kavach Grid' : 'Sudarshan Hub'}</div>
+                      <div className="font-bold text-sm">{BUS_NAMES[t.busId] || t.busId}</div>
                     </div>
                     {isAttacked && (
                       <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 border border-red-500/50 rounded text-[9px] font-bold animate-pulse">

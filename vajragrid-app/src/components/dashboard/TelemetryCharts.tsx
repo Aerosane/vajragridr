@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useSyncExternalStore } from 'react';
 import {
   LineChart,
   Line,
@@ -25,7 +25,13 @@ const BUS_COLORS: Record<string, string> = {
   'BUS-005': '#f97316', // orange-500
 };
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsProps) {
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
   const chartData = useMemo(() => {
     const buses = Array.from(telemetryHistory.keys());
     if (buses.length === 0) return [];
@@ -62,6 +68,19 @@ export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsPro
   }, [telemetryHistory]);
 
   const buses = Array.from(telemetryHistory.keys());
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col gap-6 p-4 bg-slate-900/50 rounded-lg">
+        {['Voltage Levels (kV) — Per Bus', 'System Frequency (Hz)', 'Active Power (MW) — Per Bus'].map(title => (
+          <div key={title} className="w-full h-64 bg-slate-950/50 p-4 border border-slate-700 rounded shadow-inner">
+            <h3 className="text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">{title}</h3>
+            <div className="w-full h-48 flex items-center justify-center text-slate-600 text-xs">Loading chart...</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 bg-slate-900/50 rounded-lg">
