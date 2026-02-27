@@ -6,16 +6,17 @@ import { SystemState } from '@/lib/types';
 interface SystemStatusBarProps {
   systemState: SystemState | null;
   alertCount: number;
+  simulationRunning: boolean;
 }
 
-export default function SystemStatusBar({ systemState, alertCount }: SystemStatusBarProps) {
+export default function SystemStatusBar({ systemState, alertCount, simulationRunning }: SystemStatusBarProps) {
   const [uptime, setUptime] = useState(0);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const uptimeRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Derive running state from prop
-  const isRunning = !!systemState;
+  // Use actual simulation running state, not systemState presence
+  const isRunning = simulationRunning;
 
   // Clock — runs once on mount
   useEffect(() => {
@@ -33,11 +34,10 @@ export default function SystemStatusBar({ systemState, alertCount }: SystemStatu
       }, 1000);
       return () => { if (uptimeRef.current) clearInterval(uptimeRef.current); };
     }
-    // Not running — reset handled by render-time check below
     return undefined;
   }, [isRunning]);
 
-  // Reset uptime via React 19 render-time state derivation (no ref, no effect)
+  // Reset uptime when simulation stops
   const [prevRunning, setPrevRunning] = useState(false);
   if (prevRunning && !isRunning) {
     setUptime(0);
@@ -83,8 +83,8 @@ export default function SystemStatusBar({ systemState, alertCount }: SystemStatu
 
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">System Status:</span>
-          <span className={`px-2 py-0.5 rounded border text-[10px] font-black tracking-wider ${getStatusColor(systemState?.systemStatus || 'OFFLINE')}`}>
-            {systemState?.systemStatus || 'OFFLINE'}
+          <span className={`px-2 py-0.5 rounded border text-[10px] font-black tracking-wider ${getStatusColor(isRunning ? (systemState?.systemStatus || 'NOMINAL') : 'OFFLINE')}`}>
+            {isRunning ? (systemState?.systemStatus || 'NOMINAL') : 'OFFLINE'}
           </span>
         </div>
         

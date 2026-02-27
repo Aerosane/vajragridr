@@ -22,7 +22,7 @@ interface BusNodeData {
   name: string;
   type: BusType;
   telemetry?: GridTelemetry;
-  alertSeverity?: 'CRITICAL' | 'MEDIUM' | 'LOW';
+  alertSeverity?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   healingPhase?: string;
   isIsolated?: boolean;
 }
@@ -65,6 +65,9 @@ const BusNode = ({ data }: { data: BusNodeData }) => {
     }
     if (alertSeverity === 'CRITICAL') {
       return 'border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-node-attack';
+    }
+    if (alertSeverity === 'HIGH') {
+      return 'border-orange-500 shadow-[0_0_18px_rgba(249,115,22,0.5)]';
     }
     if (alertSeverity === 'MEDIUM') {
       return 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]';
@@ -183,10 +186,12 @@ export default function GridTopologyMap({
           (a) => a.affectedAssets.includes(node.id) && a.status === 'ACTIVE'
         );
         
-        let highestSeverity: 'CRITICAL' | 'MEDIUM' | 'LOW' | undefined;
+        let highestSeverity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | undefined;
         if (activeAlerts.some(a => a.severity === 'CRITICAL')) {
           highestSeverity = 'CRITICAL';
-        } else if (activeAlerts.some(a => a.severity === 'HIGH' || a.severity === 'MEDIUM')) {
+        } else if (activeAlerts.some(a => a.severity === 'HIGH')) {
+          highestSeverity = 'HIGH';
+        } else if (activeAlerts.some(a => a.severity === 'MEDIUM')) {
           highestSeverity = 'MEDIUM';
         } else if (activeAlerts.length > 0) {
           highestSeverity = 'LOW';

@@ -13,6 +13,7 @@ export default function Home() {
     simulationState,
     shield,
     connected,
+    error,
     startSimulation,
     stopSimulation,
     resetSimulation,
@@ -32,6 +33,13 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {error && !connected && (
+        <div className="fixed top-10 right-2 z-50 bg-red-900/80 border border-red-700 rounded px-3 py-1.5 text-[10px] font-mono text-red-400">
+          ⚠ {error}
+        </div>
+      )}
+
       <div className="flex">
         {/* Main dashboard */}
         <div className="flex-1">
@@ -41,6 +49,7 @@ export default function Home() {
             telemetryHistory={telemetryHistory}
             alertCount={alerts.filter(a => a.status === 'ACTIVE').length}
             shield={shield}
+            simulationRunning={simulationState?.running ?? false}
           />
         </div>
 
