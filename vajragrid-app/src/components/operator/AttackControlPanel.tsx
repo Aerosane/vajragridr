@@ -58,8 +58,8 @@ export default function AttackControlPanel({
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl w-full max-w-md">
-      <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+    <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl w-full">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-700 bg-slate-800/50 flex flex-wrap justify-between items-center gap-2">
         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-100 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-blue-500" />
           Operator Console
@@ -69,7 +69,7 @@ export default function AttackControlPanel({
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Simulation Controls */}
         <div className="grid grid-cols-3 gap-3">
           <button
@@ -122,7 +122,7 @@ export default function AttackControlPanel({
         </div>
       </div>
 
-      <div className="px-6 py-3 bg-slate-950/50 border-t border-slate-800">
+      <div className="px-3 sm:px-6 py-2 sm:py-3 bg-slate-950/50 border-t border-slate-800">
         <div className="flex justify-between items-center text-[9px] font-mono text-slate-600">
           <span>TICK: {simulationState?.tick || 0}</span>
           <span>SPEED: {simulationState?.speed || 1.0}x</span>

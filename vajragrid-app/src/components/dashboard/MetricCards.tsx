@@ -105,11 +105,11 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
   };
 
   return (
-    <div data-testid="metric-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-2">
+    <div data-testid="metric-cards" className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 px-2 sm:px-4 py-2">
       {metrics.map((metric, idx) => (
         <div 
           key={idx} 
-          className={`gradient-border ${metric.isActive ? 'gradient-border-active' : ''} bg-slate-900/40 p-4 border border-slate-800/50 rounded-lg group hover:border-slate-700/50 transition-all duration-300`}
+          className={`gradient-border ${metric.isActive ? 'gradient-border-active' : ''} bg-slate-900/40 p-2.5 sm:p-4 border border-slate-800/50 rounded-lg group hover:border-slate-700/50 transition-all duration-300`}
         >
           <div className="flex justify-between items-start mb-2">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-400 transition-colors">
@@ -120,7 +120,7 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
             </div>
           </div>
           <div className="flex items-baseline gap-1">
-            <p className={`text-2xl font-mono font-black value-transition ${metric.color}`}>
+            <p className={`text-lg sm:text-2xl font-mono font-black value-transition ${metric.color}`}>
               {metric.value}
             </p>
             <span className="text-[10px] font-bold text-slate-600 uppercase">{metric.unit}</span>
