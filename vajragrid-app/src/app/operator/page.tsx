@@ -87,18 +87,18 @@ export default function OperatorPage() {
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950 px-6 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 bg-blue-600 rounded-sm transform rotate-45" />
-          <h1 className="text-lg font-black tracking-tight uppercase">
-            VajraGrid <span className="text-blue-500 font-normal text-sm">Operator Console</span>
+      <header className="border-b border-slate-800 bg-slate-950 px-3 sm:px-6 py-2 sm:py-3 flex justify-between items-center">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-4 sm:w-5 h-4 sm:h-5 bg-blue-600 rounded-sm transform rotate-45" />
+          <h1 className="text-sm sm:text-lg font-black tracking-tight uppercase">
+            VajraGrid <span className="text-blue-500 font-normal text-xs sm:text-sm">Operator Console</span>
           </h1>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/" className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider">
             ← Dashboard
           </Link>
-          <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-mono ${
+          <div className={`flex items-center gap-2 rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-mono ${
             connected ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'
           }`}>
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
@@ -114,9 +114,9 @@ export default function OperatorPage() {
         </div>
       )}
 
-      <div className="flex p-6 gap-6">
+      <div className="flex flex-col md:flex-row p-3 sm:p-6 gap-4 sm:gap-6">
         {/* Left: Attack Controls */}
-        <div className="w-96 flex flex-col gap-6">
+        <div className="w-full md:w-96 flex flex-col gap-4 sm:gap-6">
           <AttackControlPanel
             onAttack={injectAttack}
             onStart={startSimulation}
