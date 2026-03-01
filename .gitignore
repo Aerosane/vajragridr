@@ -1,0 +1,59 @@
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Node / pnpm ===
+node_modules/
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Next.js ===
+.next/
+out/
+
+# === Build ===
+build/
+dist/
+coverage/
+*.tsbuildinfo
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+
+# === Temporary / rendered slides ===
+slide-*.jpg
+tpl-*.jpg
+vajragrid-app/public/slide-*.jpg
+vajragrid-app/public/tpl-*.jpg
+
+# === Scratch files ===
+models.md
+
+# === Original template (large, not needed in repo) ===
+Project Submission Deck _ AMD Slingshot.pptx
+
+# === Vercel ===
+.vercel
+
+# === Python (ML training) ===
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# === Misc ===
+*.pem
+*.log
