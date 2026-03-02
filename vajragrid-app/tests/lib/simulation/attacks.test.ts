@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { generateTelemetry } from '../DataGenerator';
-import { injectFDI } from '../attacks/FDIAttack';
-import { injectCommandSpoof } from '../attacks/CommandSpoof';
-import { injectSensorTamper } from '../attacks/SensorTamper';
-import { injectMeterAttack } from '../attacks/MeterAttack';
-import { injectMaDIoT } from '../attacks/MaDIoTAttack';
+import { generateTelemetry } from '@/lib/simulation/DataGenerator';
+import { injectFDI } from '@/lib/simulation/attacks/FDIAttack';
+import { injectCommandSpoof } from '@/lib/simulation/attacks/CommandSpoof';
+import { injectSensorTamper } from '@/lib/simulation/attacks/SensorTamper';
+import { injectMeterAttack } from '@/lib/simulation/attacks/MeterAttack';
+import { injectMaDIoT } from '@/lib/simulation/attacks/MaDIoTAttack';
 
 describe('Attack Injectors', () => {
-  const baseTelemetry = () => generateTelemetry(50);
+  const baseTelemetry = () => generateTelemetry(50, 1);
 
   describe('FDI Attack', () => {
     it('distorts voltage on target bus', () => {

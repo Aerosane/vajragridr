@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { generateTelemetry } from '../../simulation/DataGenerator';
-import { runRules } from '../RuleEngine';
-import { runPhysicsChecks } from '../PhysicsEngine';
-import { StatisticalDetector } from '../StatisticalEngine';
-import { classifyThreats } from '../AlertClassifier';
-import { injectFDI } from '../../simulation/attacks/FDIAttack';
-import { injectCommandSpoof } from '../../simulation/attacks/CommandSpoof';
+import { generateTelemetry } from '@/lib/simulation/DataGenerator';
+import { runRules } from '@/lib/detection/RuleEngine';
+import { runPhysicsChecks } from '@/lib/detection/PhysicsEngine';
+import { StatisticalDetector } from '@/lib/detection/StatisticalEngine';
+import { classifyThreats } from '@/lib/detection/AlertClassifier';
+import { injectFDI } from '@/lib/simulation/attacks/FDIAttack';
+import { injectCommandSpoof } from '@/lib/simulation/attacks/CommandSpoof';
 
 /** Feed all buses from a telemetry snapshot into the detector */
 function feedDetector(detector: StatisticalDetector, buses: ReturnType<typeof generateTelemetry>) {

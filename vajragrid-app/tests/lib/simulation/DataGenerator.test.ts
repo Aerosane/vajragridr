@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { generateTelemetry, computeSystemState } from '../DataGenerator';
+import { generateTelemetry, computeSystemState } from '@/lib/simulation/DataGenerator';
 
 describe('DataGenerator', () => {
   describe('generateTelemetry', () => {
     it('generates telemetry for all 5 buses', () => {
-      const telemetry = generateTelemetry(0);
+      const telemetry = generateTelemetry(0, 1);
       expect(telemetry).toHaveLength(5);
       const busIds = telemetry.map(t => t.busId);
       expect(busIds).toContain('BUS-001');
@@ -12,7 +12,7 @@ describe('DataGenerator', () => {
     });
 
     it('produces voltages in realistic range (200-260 kV)', () => {
-      const telemetry = generateTelemetry(10);
+      const telemetry = generateTelemetry(10, 1);
       for (const t of telemetry) {
         expect(t.voltage).toBeGreaterThan(200);
         expect(t.voltage).toBeLessThan(260);
@@ -20,7 +20,7 @@ describe('DataGenerator', () => {
     });
 
     it('produces frequency near 50 Hz', () => {
-      const telemetry = generateTelemetry(10);
+      const telemetry = generateTelemetry(10, 1);
       for (const t of telemetry) {
         expect(t.frequency).toBeGreaterThan(49.5);
         expect(t.frequency).toBeLessThan(50.5);
@@ -28,7 +28,7 @@ describe('DataGenerator', () => {
     });
 
     it('includes line flows for each bus', () => {
-      const telemetry = generateTelemetry(5);
+      const telemetry = generateTelemetry(5, 1);
       for (const t of telemetry) {
         expect(t.lineFlows).toBeDefined();
         expect(Array.isArray(t.lineFlows)).toBe(true);
@@ -36,7 +36,7 @@ describe('DataGenerator', () => {
     });
 
     it('includes timestamp and breaker status', () => {
-      const telemetry = generateTelemetry(0);
+      const telemetry = generateTelemetry(0, 1);
       for (const t of telemetry) {
         expect(t.timestamp).toBeDefined();
         expect(t.breakerStatus).toBe('CLOSED');
@@ -44,8 +44,8 @@ describe('DataGenerator', () => {
     });
 
     it('produces different values for different ticks', () => {
-      const t1 = generateTelemetry(0);
-      const t2 = generateTelemetry(100);
+      const t1 = generateTelemetry(0, 1);
+      const t2 = generateTelemetry(100, 1);
       // Different ticks = different load curves = different voltages
       const v1 = t1[0].voltage;
       const v2 = t2[0].voltage;
@@ -55,7 +55,7 @@ describe('DataGenerator', () => {
 
   describe('computeSystemState', () => {
     it('computes system state from telemetry', () => {
-      const telemetry = generateTelemetry(10);
+      const telemetry = generateTelemetry(10, 1);
       const state = computeSystemState(telemetry);
       expect(state.totalGeneration).toBeGreaterThan(0);
       expect(state.totalLoad).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe('DataGenerator', () => {
     });
 
     it('returns correct number of active buses', () => {
-      const telemetry = generateTelemetry(10);
+      const telemetry = generateTelemetry(10, 1);
       const state = computeSystemState(telemetry);
       expect(state.activeBuses).toBe(5);
     });
