@@ -41,8 +41,9 @@ vajragrid-app/public/tpl-*.jpg
 # === Scratch files ===
 models.md
 
-# === Original template (large, not needed in repo) ===
-Project Submission Deck _ AMD Slingshot.pptx
+# === Presentation decks (keep local, not in repo) ===
+*.pptx
+*.pdf
 
 # === Vercel ===
 .vercel
