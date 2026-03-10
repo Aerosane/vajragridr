@@ -14,6 +14,9 @@ import { processAlerts, tickHealing, resetShield } from '@/lib/healing';
 import { publish } from '@/lib/events/EventBus';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
+/** Ticks to skip detection at startup while telemetry baselines stabilize */
+const STARTUP_GRACE_TICKS = 30;
+
 interface PipelineState {
   statDetector: StatisticalDetector;
   previousReadings: Map<string, GridTelemetry>;
@@ -21,6 +24,7 @@ interface PipelineState {
   latestTelemetry: GridTelemetry[];
   mlAnomalies: { busId: string; score: number; isAnomaly: boolean; confidence: number }[];
   initialized: boolean;
+  tickCount: number;
 }
 
 const g = globalThis as unknown as { __vajraPipeline?: PipelineState };
@@ -34,6 +38,7 @@ function getState(): PipelineState {
       latestTelemetry: [],
       mlAnomalies: [],
       initialized: false,
+      tickCount: 0,
     };
   }
   return g.__vajraPipeline;
@@ -48,15 +53,26 @@ export function ensureDetectionPipeline() {
   engine.setCallbacks({
     onTelemetry: (telemetry: GridTelemetry[]) => {
       state.latestTelemetry = telemetry;
+      state.tickCount++;
       publish('telemetry', telemetry);
+
+      // Always collect samples for baseline even during grace period
+      for (const t of telemetry) {
+        const prev = state.previousReadings.get(t.busId) || null;
+        state.previousReadings.set(t.busId, t);
+        state.statDetector.addSample(t.busId, t);
+      }
+
+      // Startup grace: let baselines stabilize before firing alerts
+      if (state.tickCount <= STARTUP_GRACE_TICKS) {
+        return;
+      }
 
       // Layer 1: Rule-based detection
       const allRuleViolations = [];
       for (const t of telemetry) {
         const prev = state.previousReadings.get(t.busId) || null;
         allRuleViolations.push(...runRules(t, prev));
-        state.previousReadings.set(t.busId, t);
-        state.statDetector.addSample(t.busId, t);
       }
 
       // Layer 2: Physics consistency
@@ -159,6 +175,7 @@ export function resetPipeline() {
   state.latestTelemetry = [];
   state.previousReadings.clear();
   state.statDetector = new StatisticalDetector();
+  state.tickCount = 0;
   state.initialized = false;
   resetShield();
 }
