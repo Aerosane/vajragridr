@@ -95,7 +95,8 @@ export function runRules(current: GridTelemetry, previous: GridTelemetry | null)
   }
 
   // 5. Zero meter reading (significant power but no meter consumption)
-  if (Math.abs(current.activePower) > 1.0 && current.meterConsumption === 0) {
+  // Only applies to buses that have meters (meterCount > 0)
+  if (current.meterCount > 0 && Math.abs(current.activePower) > 1.0 && current.meterConsumption === 0) {
     violations.push({
       ruleId: 'RULE_ZERO_METER',
       ruleName: 'Zero Meter Reading',
