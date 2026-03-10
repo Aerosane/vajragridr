@@ -72,10 +72,10 @@ export function runPhysicsChecks(buses: GridTelemetry[]): PhysicsViolation[] {
     });
   });
 
-  // 3. Power Equation Consistency (P ≈ V×I×cosφ within 15%)
+  // 3. Power Equation Consistency (P ≈ √3×V×I×cosφ within 15%)
   buses.forEach(bus => {
-    // P(MW) * 1000 = V(kV) * I(A) * PF
-    const calculatedP = (bus.voltage * bus.current * bus.powerFactor) / 1000;
+    // 3-phase: P(MW) = √3 × V(kV) × I(A) × PF / 1000
+    const calculatedP = (Math.sqrt(3) * bus.voltage * bus.current * bus.powerFactor) / 1000;
     const actualP = Math.abs(bus.activePower);
     const diff = Math.abs(calculatedP - actualP);
     const maxP = Math.max(calculatedP, actualP);
