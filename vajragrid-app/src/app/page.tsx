@@ -4,7 +4,7 @@ import React from 'react';
 import CommandCenter from '@/components/dashboard/CommandCenter';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
 import HealingTimeline from '@/components/dashboard/HealingTimeline';
-import { usePollingGridData } from '@/hooks/usePollingGridData';
+import { useSSEGridData } from '@/hooks/useSSEGridData';
 
 export default function Home() {
   const {
@@ -19,7 +19,7 @@ export default function Home() {
     stopSimulation,
     resetSimulation,
     injectAttack,
-  } = usePollingGridData();
+  } = useSSEGridData();
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 

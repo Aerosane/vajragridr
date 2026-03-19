@@ -10,6 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@xyflow/react": "^12.10.1",
     "next": "16.1.6",
     "onnxruntime-node": "^1.24.2",
@@ -19,6 +22,7 @@
     "recharts": "^3.7.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "three": "^0.183.2",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
@@ -29,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.183.1",
     "@types/uuid": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

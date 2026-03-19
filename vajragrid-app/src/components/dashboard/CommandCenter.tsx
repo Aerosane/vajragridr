@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
 import SystemStatusBar from './SystemStatusBar';
 import MetricCards from './MetricCards';
 import TelemetryCharts from './TelemetryCharts';
@@ -51,9 +52,18 @@ export default function CommandCenter({
               <span className="w-1 sm:w-1.5 h-4 sm:h-6 bg-blue-600 rounded-full" />
               VajraGrid Command Center
             </h1>
-            <p className="text-[9px] sm:text-[10px] font-mono text-slate-500 uppercase tracking-widest pl-3 sm:pl-4">
-              Real-time Critical Infrastructure Security Intelligence
-            </p>
+            <div className="flex items-center gap-3 pl-3 sm:pl-4">
+              <p className="text-[9px] sm:text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                Real-time Critical Infrastructure Security Intelligence
+              </p>
+              <Link
+                href="/grid-3d"
+                className="px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider border bg-indigo-950/50 text-indigo-400 border-indigo-800/50 hover:bg-indigo-900/50 transition-all flex items-center gap-1.5"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M2 16l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                3D View
+              </Link>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-slate-900/40 border border-slate-800/50 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-sm flex-wrap">

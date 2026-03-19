@@ -213,6 +213,14 @@ pnpm dev
 
 Open `http://localhost:3000` — you'll see the SOC dashboard.
 
+### 3D Command View
+
+Navigate to `/grid-3d` for an interactive 3D topology visualization:
+- **Real-time power flow** — animated particles follow catenary transmission lines
+- **Station-specific models** — generator (arc reactor core + cooling tower), solar farm (tilted PV panels), load substations (HV transformers + surge arresters)
+- **Click-to-inspect** — click any station for full telemetry, equipment status, alerts, and shield events
+- **Live SSE streaming** — zero-polling, real-time data push via Server-Sent Events
+
 ### Run a Demo Attack Sequence
 
 1. Navigate to `/operator`

@@ -10,7 +10,7 @@ import { runPhysicsChecks } from './PhysicsEngine';
 import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
 import { runMLDetection, isMLReady } from './MLDetector';
-import { processAlerts, tickHealing, resetShield } from '@/lib/healing';
+import { processAlerts, tickHealing, resetShield, getShieldStatus } from '@/lib/healing';
 import { publish } from '@/lib/events/EventBus';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
@@ -147,6 +147,8 @@ export function ensureDetectionPipeline() {
         processAlerts(alerts);
       }
       tickHealing();
+      // Publish shield status after healing tick
+      publish('shield', getShieldStatus());
     },
     onSystemState: (data) => {
       publish('system_state', data);

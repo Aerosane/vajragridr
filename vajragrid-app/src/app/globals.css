@@ -126,3 +126,41 @@ body::before {
 .animate-shield-healed {
   animation: shield-healed 1.5s ease-in-out 3;
 }
+
+/* Healing cyan ring expanding animation */
+@keyframes healing-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 0.15; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+.animate-healing-ring {
+  animation: healing-ring 2s ease-in-out infinite;
+}
+
+/* Bus node hover lift */
+.bus-node-interactive {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.bus-node-interactive:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* Detail panel slide-in */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out;
+}
+
+/* Edge detail panel fade-in */
+@keyframes fade-scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.animate-fade-scale-in {
+  animation: fade-scale-in 0.2s ease-out;
+}
