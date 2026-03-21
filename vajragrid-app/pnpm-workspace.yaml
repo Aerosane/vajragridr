@@ -1,3 +1,8 @@
 ignoredBuiltDependencies:
+  - esbuild
+  - protobufjs
+  - puppeteer
   - sharp
   - unrs-resolver
+onlyBuiltDependencies:
+  - onnxruntime-node
