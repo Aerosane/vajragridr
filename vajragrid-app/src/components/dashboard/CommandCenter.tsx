@@ -7,8 +7,13 @@ import MetricCards from './MetricCards';
 import TelemetryCharts from './TelemetryCharts';
 import AlertPanel from './AlertPanel';
 import GridTopologyMap from './GridTopologyMap';
+import KillChainTimeline from './KillChainTimeline';
+import MQTTPacketInspector from './MQTTPacketInspector';
+import MitreAttackMatrix from './MitreAttackMatrix';
+import ConfidenceRadar from './ConfidenceRadar';
 import { SystemState, ThreatAlert, GridTelemetry } from '@/lib/types';
 import type { ShieldData } from '@/hooks/usePollingGridData';
+import type { KillChainData, MQTTPacket, LiveAttack } from '@/hooks/useSSEGridData';
 
 interface CommandCenterProps {
   systemState: SystemState | null;
@@ -17,6 +22,9 @@ interface CommandCenterProps {
   alertCount: number;
   shield?: ShieldData | null;
   simulationRunning: boolean;
+  killChain?: KillChainData | null;
+  mqttPackets?: MQTTPacket[];
+  liveAttacks?: LiveAttack[];
 }
 
 export default function CommandCenter({
@@ -26,6 +34,9 @@ export default function CommandCenter({
   alertCount,
   shield,
   simulationRunning,
+  killChain,
+  mqttPackets = [],
+  liveAttacks = [],
 }: CommandCenterProps) {
   // Extract latest telemetry for each bus
   const latestTelemetry = useMemo(() => {
@@ -91,6 +102,15 @@ export default function CommandCenter({
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 min-h-0">
           {/* Main Visualization Column (3/4 width) */}
           <div className="lg:col-span-3 flex flex-col gap-4 sm:gap-6 overflow-y-auto custom-scrollbar sm:pr-1">
+            {/* Kill Chain Timeline */}
+            <div className="w-full">
+              <KillChainTimeline
+                killChain={killChain ?? null}
+                shield={shield ?? null}
+                attackCount={liveAttacks.length}
+              />
+            </div>
+
             {/* Real-time Topology Map */}
             <div className="w-full">
               <GridTopologyMap 
@@ -99,6 +119,19 @@ export default function CommandCenter({
                 shield={shield}
               />
             </div>
+
+            {/* MITRE ATT&CK Matrix + Confidence Radar */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+              <div className="md:col-span-2">
+                <MitreAttackMatrix alerts={alerts} />
+              </div>
+              <div className="md:col-span-1">
+                <ConfidenceRadar
+                  killChain={killChain ?? null}
+                  alertConfidence={alerts.length > 0 ? Math.max(...alerts.map(a => a.confidence)) : 0}
+                />
+              </div>
+            </div>
             
             {/* Historical Charts */}
             <div className="w-full pb-4 sm:pb-6">
@@ -106,9 +139,10 @@ export default function CommandCenter({
             </div>
           </div>
 
-          {/* Alert Panel Column (1/4 width) */}
-          <div className="lg:col-span-1 max-h-[50vh] lg:max-h-[80vh] lg:sticky lg:top-16">
+          {/* Right Column: Alerts + MQTT Inspector (1/4 width) */}
+          <div className="lg:col-span-1 flex flex-col gap-4 max-h-[50vh] lg:max-h-[80vh] lg:sticky lg:top-16 overflow-y-auto">
             <AlertPanel alerts={alerts} />
+            <MQTTPacketInspector packets={mqttPackets} liveAttacks={liveAttacks} />
           </div>
         </div>
       </main>

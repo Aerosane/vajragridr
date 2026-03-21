@@ -116,15 +116,30 @@ export function classifyThreats(
     });
   });
 
-  // 4. Check for Load Manipulation
-  // Indicators: Power imbalance + high load forecast deviation
+  // 4. Check for Load Manipulation (MaDIoT / Coordinated)
+  // Requires: Power imbalance AND multiple buses with broken cross-correlations
+  // AND supporting rule violations (frequency/voltage rate-of-change) to avoid false positives
   const powerImbalance = physics.find(p => p.checkId === 'PHYS_PWR_BALANCE');
   if (powerImbalance) {
     const highDeviations = currentTelemetry
-      .map(t => ({ busId: t.busId, dev: stats.correlations.get(t.busId) || 0 })) // Wait, use forecast deviation if available
-      .filter(d => d.dev > 0.25); // Placeholder for load forecast deviation logic
+      .map(t => {
+        let maxCorrelationLoss = 0;
+        for (const [key, val] of stats.correlations) {
+          if (key.includes(t.busId)) {
+            maxCorrelationLoss = Math.max(maxCorrelationLoss, 1 - Math.abs(val));
+          }
+        }
+        return { busId: t.busId, dev: maxCorrelationLoss };
+      })
+      .filter(d => d.dev > 0.50); // Require correlation < 0.50 (strong decorrelation, not noise)
 
-    if (highDeviations.length > 0) {
+    // Require 2+ buses with broken correlations AND active disturbance indicators
+    const disturbanceRules = rules.filter(r =>
+      r.ruleId === 'RULE_ROCOF_CRIT' || r.ruleId === 'RULE_ROCOF_WARN' ||
+      r.ruleId === 'RULE_VOLT_ROC' || r.ruleId === 'RULE_FREQ_CRIT'
+    );
+
+    if (highDeviations.length >= 2 && disturbanceRules.length > 0) {
       alerts.push({
         id: `alert-load-${Date.now()}`,
         timestamp: now,

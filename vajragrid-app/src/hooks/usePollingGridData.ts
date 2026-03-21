@@ -92,11 +92,14 @@ export function usePollingGridData() {
 
   const sendAction = useCallback(async (endpoint: string, body?: unknown) => {
     try {
-      await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
       });
+      if (!res.ok) {
+        console.error(`[VajraGrid] Action failed: ${endpoint} — HTTP ${res.status}`);
+      }
     } catch (err) {
       console.error('[VajraGrid] Action failed:', err);
     }

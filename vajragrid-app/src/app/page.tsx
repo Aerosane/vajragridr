@@ -13,15 +13,27 @@ export default function Home() {
     alerts,
     simulationState,
     shield,
+    liveAttacks,
+    killChain,
+    mqttPackets,
     connected,
     error,
     startSimulation,
     stopSimulation,
     resetSimulation,
     injectAttack,
+    liveInjectAttack,
+    liveRemoveAttack,
+    liveClearAttacks,
   } = useSSEGridData();
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  // Auto-detect: if we have live attacks state OR telemetry is flowing with no simulation, we're in live mode
+  const isLiveMode = liveAttacks !== undefined && (
+    liveAttacks.length > 0 ||
+    (telemetryHistory.size > 0 && !simulationState?.running)
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0e1a]">
@@ -62,6 +74,9 @@ export default function Home() {
             alertCount={alerts.filter(a => a.status === 'ACTIVE').length}
             shield={shield}
             simulationRunning={simulationState?.running ?? false}
+            killChain={killChain}
+            mqttPackets={mqttPackets}
+            liveAttacks={liveAttacks}
           />
         </div>
 
@@ -76,11 +91,15 @@ export default function Home() {
           lg:static lg:translate-x-0 lg:max-h-screen
         `}>
           <AttackControlPanel
-            onAttack={injectAttack}
+            onAttack={isLiveMode ? liveInjectAttack : injectAttack}
+            onRemoveAttack={isLiveMode ? liveRemoveAttack : undefined}
+            onClearAttacks={isLiveMode ? liveClearAttacks : undefined}
             onStart={startSimulation}
             onStop={stopSimulation}
             onReset={resetSimulation}
             simulationState={simulationState}
+            liveAttacks={liveAttacks}
+            isLiveMode={isLiveMode}
           />
           <HealingTimeline
             activeEvents={shield?.activeEvents || []}

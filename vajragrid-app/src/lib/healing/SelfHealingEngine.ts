@@ -20,13 +20,17 @@ import type {
 } from '@/lib/types';
 import { GRID_TOPOLOGY, getLinesForBus, getAdjacentBuses } from '@/lib/constants/gridConfig';
 
+// Callback invoked when a bus is fully healed — set by IngestionEngine to auto-clear attacks
+let onBusHealed: ((busId: string) => void) | null = null;
+export function setOnBusHealedCallback(cb: (busId: string) => void) { onBusHealed = cb; }
+
 // Phase durations in ticks (1 tick = 1 second)
 const PHASE_TICKS: Record<HealingPhase, number> = {
-  DETECTING: 10,   // Confirm threat persists before isolating
+  DETECTING: 4,    // Confirm threat persists before isolating
   ISOLATING: 2,
   REROUTING: 2,
-  MONITORING: 8,
-  RESTORING: 3,
+  MONITORING: 4,
+  RESTORING: 2,
   RESTORED: 0,
 };
 
@@ -57,7 +61,7 @@ interface ShieldState {
 }
 
 /** Consecutive alert ticks required before creating a healing event */
-const ALERT_CONFIRM_TICKS = 3;
+const ALERT_CONFIRM_TICKS = 2;
 
 const g = globalThis as unknown as { __vajraShield?: ShieldState };
 
@@ -311,6 +315,9 @@ export function tickHealing() {
           state.completedEvents.unshift(toDTO(event));
           if (state.completedEvents.length > 20) state.completedEvents.pop();
           state.activeEvents.delete(busId);
+
+          // Auto-remove attack overlay for this bus so detection stops
+          if (onBusHealed) onBusHealed(busId);
           break;
         }
       }

@@ -35,6 +35,7 @@ export class SimulationEngine {
   start() {
     if (this.running) return;
     this.running = true;
+    if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => this.step(), 1000 / this.speed);
     this.emitState();
   }

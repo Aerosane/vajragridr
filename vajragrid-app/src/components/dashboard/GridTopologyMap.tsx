@@ -205,9 +205,9 @@ const BusNode = ({ data, selected }: { data: BusNodeData; selected?: boolean }) 
 
 // ─── Bus Detail Panel ──────────────────────────────────────────
 
-function DeviationBar({ value, nominal, unit, warnPct = 5, critPct = 10 }: {
-  value: number; nominal: number; unit: string; warnPct?: number; critPct?: number;
-}) {
+function DeviationBar({ value, nominal, warnPct = 5, critPct = 10 }: {
+  value: number; nominal: number; warnPct?: number; critPct?: number;
+}){
   const pct = nominal > 0 ? ((value - nominal) / nominal) * 100 : 0;
   const absPct = Math.abs(pct);
   const barColor = absPct > critPct ? 'bg-red-500' : absPct > warnPct ? 'bg-amber-500' : 'bg-emerald-500';
@@ -267,6 +267,13 @@ function BusDetailPanel({
   const busAlerts = alerts.filter((a) => a.affectedAssets.includes(busId) && a.status === 'ACTIVE');
   const healingEvents = shield?.activeEvents?.filter((e) => e.affectedBus === busId) || [];
   const status = getBusStatus(busId, alerts, shield);
+
+  // Refresh "X s ago" timestamps without calling Date.now() during render
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!meta) return null;
 
@@ -337,10 +344,10 @@ function BusDetailPanel({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <MeasurementCard label="Voltage" value={v.toFixed(1)} unit="kV">
-              <DeviationBar value={v} nominal={230} unit="kV" />
+              <DeviationBar value={v} nominal={230} />
             </MeasurementCard>
             <MeasurementCard label="Frequency" value={f.toFixed(3)} unit="Hz">
-              <DeviationBar value={f} nominal={50} unit="Hz" warnPct={0.1} critPct={0.5} />
+              <DeviationBar value={f} nominal={50} warnPct={0.1} critPct={0.5} />
             </MeasurementCard>
             <MeasurementCard label="Active Power" value={Math.abs(ap).toFixed(1)} unit="MW">
               <div className="mt-1 flex items-center gap-1">
@@ -423,7 +430,7 @@ function BusDetailPanel({
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="font-bold text-[9px] uppercase tracking-wider">{a.severity}</span>
                     <span className="text-[9px] text-slate-500">
-                      {Math.round((Date.now() - new Date(a.timestamp).getTime()) / 1000)}s ago
+                      {Math.round((now - new Date(a.timestamp).getTime()) / 1000)}s ago
                     </span>
                   </div>
                   <div className="font-semibold">{a.title}</div>

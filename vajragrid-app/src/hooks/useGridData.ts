@@ -91,9 +91,15 @@ export function useGridData() {
         headers: { 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
       });
+      if (!res.ok) {
+        const err = await res.text().catch(() => `HTTP ${res.status}`);
+        console.error(`[VajraGrid] Command failed: ${endpoint} — ${err}`);
+        return null;
+      }
       return res.json();
     } catch (err) {
       console.error(`[VajraGrid] Command failed: ${endpoint}`, err);
+      return null;
     }
   }, []);
 

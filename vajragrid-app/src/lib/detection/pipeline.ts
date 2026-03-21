@@ -58,7 +58,6 @@ export function ensureDetectionPipeline() {
 
       // Always collect samples for baseline even during grace period
       for (const t of telemetry) {
-        const prev = state.previousReadings.get(t.busId) || null;
         state.previousReadings.set(t.busId, t);
         state.statDetector.addSample(t.busId, t);
       }
@@ -103,7 +102,7 @@ export function ensureDetectionPipeline() {
         state.mlAnomalies = mlResults;
         // Generate ML-specific alerts for anomalies
         for (const ml of mlResults) {
-          if (ml.isAnomaly) {
+          if (ml.isAnomaly && ml.confidence > 0.65) {
             const FEATURE_NAMES = ['voltage', 'frequency', 'activePower', 'reactivePower', 'voltageAngle', 'powerFactor'];
             const mlAlert: ThreatAlert = {
               id: `ml-${ml.busId}-${Date.now()}`,

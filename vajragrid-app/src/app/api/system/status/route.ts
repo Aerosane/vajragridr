@@ -32,18 +32,23 @@ function deriveSystemState(telemetry: GridTelemetry[]): SystemState | null {
 
 // GET: poll for current state
 export async function GET() {
-  ensureDetectionPipeline();
-  const engine = getSimulationEngine();
-  const telemetry = getLatestTelemetry();
-  const ml = getMLStatus();
-  const shield = getShieldStatus();
+  try {
+    ensureDetectionPipeline();
+    const engine = getSimulationEngine();
+    const telemetry = getLatestTelemetry();
+    const ml = getMLStatus();
+    const shield = getShieldStatus();
 
-  return NextResponse.json({
-    telemetry,
-    systemState: deriveSystemState(telemetry),
-    alerts: getAlertHistory().slice(0, 50),
-    simulationState: engine.getState(),
-    ml: { ready: ml.ready, anomalyCount: ml.anomalies.filter(a => a.isAnomaly).length },
-    shield,
-  });
+    return NextResponse.json({
+      telemetry,
+      systemState: deriveSystemState(telemetry),
+      alerts: getAlertHistory().slice(0, 50),
+      simulationState: engine.getState(),
+      ml: { ready: ml.ready, anomalyCount: ml.anomalies.filter(a => a.isAnomaly).length },
+      shield,
+    });
+  } catch (err) {
+    console.error('[VajraGrid] Status endpoint error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

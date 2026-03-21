@@ -19,7 +19,7 @@ export const THRESHOLDS = {
     rocofCritical: 1.0, // Hz/s
   },
   power: {
-    balanceThreshold: 0.05, // 5% imbalance tolerance
+    balanceThreshold: 0.10, // 10% imbalance tolerance (5% was too tight for normal RTU noise)
     loadRampRate: 0.1, // 10% per minute max normal
     forecastDeviation: 0.25, // 25% deviation from forecast
   },

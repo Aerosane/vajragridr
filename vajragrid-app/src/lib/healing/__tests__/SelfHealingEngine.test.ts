@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { processAlerts, tickHealing, getShieldStatus, resetShield, isBreakerTripped, isBusIsolated } from '../index';
 import type { ThreatAlert } from '@/lib/types/alerts';
 
+/** ALERT_CONFIRM_TICKS = 2 in the engine — alerts must persist for 2 ticks before healing triggers */
+const CONFIRM_TICKS = 2;
+
 function makeMockAlert(busId: string, severity: 'CRITICAL' | 'HIGH' = 'CRITICAL'): ThreatAlert {
   return {
     id: `test-alert-${busId}-${Date.now()}`,
@@ -20,6 +23,13 @@ function makeMockAlert(busId: string, severity: 'CRITICAL' | 'HIGH' = 'CRITICAL'
   };
 }
 
+/** Confirm alerts for the required number of ticks so the shield creates a healing event */
+function confirmAlerts(alerts: ThreatAlert[], ticks = CONFIRM_TICKS) {
+  for (let i = 0; i < ticks; i++) {
+    processAlerts(alerts);
+  }
+}
+
 describe('SelfHealingEngine (VajraShield)', () => {
   beforeEach(() => {
     resetShield();
@@ -27,7 +37,6 @@ describe('SelfHealingEngine (VajraShield)', () => {
 
   it('starts in idle state with no events', () => {
     const status = getShieldStatus();
-    // active = enabled (shield is armed/ready), always true after reset
     expect(status.active).toBe(true);
     expect(status.activeEvents).toHaveLength(0);
     expect(status.completedEvents).toHaveLength(0);
@@ -35,9 +44,9 @@ describe('SelfHealingEngine (VajraShield)', () => {
     expect(status.isolatedBuses).toHaveLength(0);
   });
 
-  it('activates on CRITICAL alert', () => {
+  it('activates on CRITICAL alert after confirmation ticks', () => {
     const alert = makeMockAlert('BUS-003');
-    processAlerts([alert]);
+    confirmAlerts([alert]);
     const status = getShieldStatus();
     expect(status.active).toBe(true);
     expect(status.activeEvents.length).toBeGreaterThan(0);
@@ -49,47 +58,45 @@ describe('SelfHealingEngine (VajraShield)', () => {
       ...makeMockAlert('BUS-003'),
       severity: 'LOW',
     };
-    processAlerts([alert]);
+    confirmAlerts([alert]);
     const status = getShieldStatus();
-    // Shield stays enabled but no healing events created for LOW alerts
     expect(status.activeEvents).toHaveLength(0);
   });
 
   it('progresses through healing phases on tick', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
+    confirmAlerts([makeMockAlert('BUS-003')]);
     
     const phase1 = getShieldStatus().activeEvents[0].phase;
     expect(phase1).toBe('DETECTING');
 
-    // Tick through DETECTING phase (1 tick)
-    tickHealing();
+    // Tick through DETECTING phase (4 ticks required)
+    for (let i = 0; i < 4; i++) tickHealing();
     const phase2 = getShieldStatus().activeEvents[0].phase;
     expect(phase2).toBe('ISOLATING');
   });
 
   it('isolates buses during ISOLATING phase', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
-    tickHealing(); // DETECTING → ISOLATING
+    confirmAlerts([makeMockAlert('BUS-003')]);
+    for (let i = 0; i < 4; i++) tickHealing(); // DETECTING → ISOLATING
     
-    // During isolation, bus should be marked
     const status = getShieldStatus();
     expect(status.isolatedBuses).toContain('BUS-003');
     expect(isBusIsolated('BUS-003')).toBe(true);
   });
 
   it('trips breakers during ISOLATING phase', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
-    tickHealing(); // → ISOLATING
+    confirmAlerts([makeMockAlert('BUS-003')]);
+    for (let i = 0; i < 4; i++) tickHealing(); // → ISOLATING
     
     const status = getShieldStatus();
     expect(status.trippedBreakers.length).toBeGreaterThan(0);
   });
 
   it('completes full heal cycle', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
+    confirmAlerts([makeMockAlert('BUS-003')]);
     
-    // Tick through all phases: DETECTING(1) + ISOLATING(2) + REROUTING(2) + MONITORING(8) + RESTORING(3)
-    for (let i = 0; i < 20; i++) {
+    // DETECTING(4) + ISOLATING(2) + REROUTING(2) + MONITORING(4) + RESTORING(2) = 14
+    for (let i = 0; i < 18; i++) {
       tickHealing();
     }
     
@@ -100,10 +107,9 @@ describe('SelfHealingEngine (VajraShield)', () => {
   });
 
   it('restores breakers after heal cycle', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
+    confirmAlerts([makeMockAlert('BUS-003')]);
     
-    // Tick to completion
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 18; i++) {
       tickHealing();
     }
     
@@ -112,7 +118,7 @@ describe('SelfHealingEngine (VajraShield)', () => {
   });
 
   it('handles multiple simultaneous events', () => {
-    processAlerts([makeMockAlert('BUS-002'), makeMockAlert('BUS-004')]);
+    confirmAlerts([makeMockAlert('BUS-002'), makeMockAlert('BUS-004')]);
     
     const status = getShieldStatus();
     expect(status.activeEvents.length).toBe(2);
@@ -122,12 +128,11 @@ describe('SelfHealingEngine (VajraShield)', () => {
   });
 
   it('resets cleanly', () => {
-    processAlerts([makeMockAlert('BUS-003')]);
+    confirmAlerts([makeMockAlert('BUS-003')]);
     tickHealing();
     
     resetShield();
     const status = getShieldStatus();
-    // Shield re-enables after reset, but all events are cleared
     expect(status.active).toBe(true);
     expect(status.activeEvents).toHaveLength(0);
     expect(status.completedEvents).toHaveLength(0);
