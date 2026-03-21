@@ -67,14 +67,14 @@ const MQTT_PORT = parseInt(process.env.MQTT_PORT || '1883', 10);
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || `mqtt://localhost:${MQTT_PORT}`;
 
 /** Buffer to batch MQTT messages arriving within the same tick */
-let ingestBuffer: Record<string, unknown>[] = [];
+let ingestBuffer: Map<string, Record<string, unknown>> = new Map();
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const FLUSH_INTERVAL_MS = 1000; // Batch and ingest once per second
 
 function flushBuffer() {
-  if (ingestBuffer.length === 0) return;
-  const batch = ingestBuffer;
-  ingestBuffer = [];
+  if (ingestBuffer.size === 0) return;
+  const batch = Array.from(ingestBuffer.values());
+  ingestBuffer = new Map();
   ingestTelemetry(batch);
 }
 
@@ -163,8 +163,9 @@ export async function startMQTTBridge(): Promise<{ port: number; url: string }> 
         const busId = topicParts[1];
         if (!data.busId) data.busId = busId;
 
-        // Add to batch buffer
-        ingestBuffer.push(data);
+        // Add to batch buffer — latest reading per bus wins
+        const busKey = typeof data.busId === 'string' ? data.busId : busId;
+        ingestBuffer.set(busKey, data);
 
         // Start flush timer if not already running
         if (!flushTimer) {
