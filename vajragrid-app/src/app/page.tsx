@@ -207,7 +207,7 @@ export default function Home() {
             )}
 
             {rightTab === 'mqtt' && (
-              <div className={`${glass} p-0 overflow-hidden`}>
+              <div className={`${glass} p-0 overflow-hidden h-full flex flex-col`}>
                 <MQTTPacketInspector packets={mqttPackets ?? []} liveAttacks={liveAttacks ?? []} />
               </div>
             )}

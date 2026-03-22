@@ -192,7 +192,7 @@ export default function AttackControlPanel({
                       : 'bg-white/[0.02] text-slate-600 border-white/[0.05] hover:border-white/[0.12] hover:text-slate-400'
                   }`}
                 >
-                  {bus.replace('BUS-', 'SUB-')}
+                  {bus}
                 </button>
               ))}
             </div>
