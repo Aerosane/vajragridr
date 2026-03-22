@@ -164,7 +164,7 @@ function CompletedEvent({ event, isExpanded, onToggle }: { event: HealingEventDT
             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Healing Actions</div>
             <div className="space-y-1 max-h-[120px] overflow-y-auto custom-scrollbar">
               {event.actions.map((a, i) => {
-                const ts = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 0 });
+                const ts = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false });
                 return (
                   <div key={i} className="flex items-start gap-2 text-[10px]">
                     <span className="text-zinc-600 font-mono shrink-0 w-[60px]">{ts}</span>
