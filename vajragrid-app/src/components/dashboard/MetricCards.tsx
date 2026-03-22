@@ -105,31 +105,30 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
   };
 
   return (
-    <div data-testid="metric-cards" className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 px-2 sm:px-4 py-2">
+    <div data-testid="metric-cards" className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {metrics.map((metric, idx) => (
         <div 
           key={idx} 
-          className={`gradient-border ${metric.isActive ? 'gradient-border-active' : ''} bg-slate-900/40 p-2.5 sm:p-4 border border-slate-800/50 rounded-lg group hover:border-slate-700/50 transition-all duration-300`}
+          className={`bg-white/[0.03] backdrop-blur-2xl border border-white/[0.06] shadow-xl rounded-2xl p-5 group hover:border-white/[0.12] hover:bg-white/[0.05] transition-all duration-500 ${metric.isActive ? 'ring-1 ring-amber-500/20' : ''}`}
         >
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-400 transition-colors">
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 group-hover:text-slate-400 transition-colors">
               {metric.label}
             </p>
-            <div className="text-xs">
+            <div className="text-sm">
               {getTrendIcon(metric.trend)}
             </div>
           </div>
-          <div className="flex items-baseline gap-1">
-            <p className={`text-lg sm:text-2xl font-mono font-black value-transition ${metric.color}`}>
+          <div className="flex items-baseline gap-1.5">
+            <p className={`text-2xl sm:text-3xl font-mono font-black tabular-nums ${metric.color}`}>
               {metric.value}
             </p>
-            <span className="text-[10px] font-bold text-slate-600 uppercase">{metric.unit}</span>
+            <span className="text-xs font-bold text-slate-600 uppercase">{metric.unit}</span>
           </div>
           
-          {/* Sparkline bar reflecting actual metric proportion */}
-          <div className="mt-3 h-[2px] w-full bg-slate-800 rounded-full overflow-hidden">
+          <div className="mt-4 h-[3px] w-full bg-white/[0.04] rounded-full overflow-hidden">
             <div 
-              className={`h-full bg-current ${metric.color} opacity-40 transition-all duration-1000 ease-in-out`}
+              className={`h-full rounded-full bg-current ${metric.color} opacity-50 transition-all duration-1000 ease-in-out`}
               style={{ width: getSparklineWidth(metric) }}
             />
           </div>

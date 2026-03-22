@@ -72,57 +72,57 @@ export default function SystemStatusBar({ systemState, alertCount, simulationRun
   const freqColor = freq > 50.05 || freq < 49.95 ? 'text-amber-400' : 'text-emerald-400';
 
   return (
-    <div data-testid="status-bar" className="flex flex-wrap items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-slate-800 text-slate-100 sticky top-0 z-40 gap-2 sm:gap-0">
-      <div className="flex items-center gap-3 sm:gap-8 flex-wrap">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">VajraGrid Ops</span>
+    <div data-testid="status-bar" className="flex flex-wrap items-center justify-between px-4 sm:px-8 py-3 bg-[#060a14]/80 backdrop-blur-2xl border-b border-white/[0.04] text-slate-100 sticky top-0 z-40 gap-2 sm:gap-0">
+      <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+          <span className="text-xs font-black uppercase tracking-[0.25em] bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">VajraGrid Ops</span>
         </div>
 
-        <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+        <div className="h-5 w-px bg-white/10 hidden sm:block" />
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hidden sm:inline">System Status:</span>
-          <span className={`px-2 py-0.5 rounded border text-[10px] font-black tracking-wider ${getStatusColor(isRunning ? (systemState?.systemStatus || 'NOMINAL') : 'OFFLINE')}`}>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:inline">Status:</span>
+          <span className={`px-2.5 py-1 rounded-lg border text-xs font-black tracking-wider ${getStatusColor(isRunning ? (systemState?.systemStatus || 'NOMINAL') : 'OFFLINE')}`}>
             {isRunning ? (systemState?.systemStatus || 'NOMINAL') : 'OFFLINE'}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hidden sm:inline">Uptime:</span>
-          <span className="text-xs font-mono font-bold text-slate-300">{formatUptime(uptime)}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:inline">Uptime:</span>
+          <span className="text-sm font-mono font-bold text-slate-300 tabular-nums">{formatUptime(uptime)}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-8 flex-wrap">
-        <div className="flex items-center gap-2 bg-slate-900/40 px-2 sm:px-3 py-1 rounded-full border border-slate-800/50">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hidden md:inline">Grid Frequency:</span>
-          <span className={`text-xs font-mono font-black ${freqColor}`}>
-            {freq.toFixed(3)} <span className="text-[10px] font-normal opacity-60">Hz</span>
+      <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
+        <div className="flex items-center gap-2 bg-white/[0.03] px-3 py-1.5 rounded-full border border-white/[0.06]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:inline">Freq:</span>
+          <span className={`text-sm font-mono font-black tabular-nums ${freqColor}`}>
+            {freq.toFixed(3)} <span className="text-xs font-normal opacity-50">Hz</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hidden md:inline">Active Threats:</span>
-          <span className={`text-xs font-black ${alertCount > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
-            {alertCount > 0 ? '🚨' : ''} {alertCount.toString().padStart(2, '0')}
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:inline">Threats:</span>
+          <span className={`text-sm font-black tabular-nums ${alertCount > 0 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+            {alertCount.toString().padStart(2, '0')}
           </span>
         </div>
 
         <div className="flex items-center gap-2 hidden sm:flex">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">SCADA:</span>
-          <span className="text-xs font-black text-blue-400">
-            {systemState?.activeBuses || 0}/5 <span className="text-[10px] font-normal text-slate-500 hidden md:inline">ONLINE</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">SCADA:</span>
+          <span className="text-sm font-black text-blue-400 tabular-nums">
+            {systemState?.activeBuses || 0}/5
           </span>
         </div>
 
-        <div className="h-4 w-px bg-slate-800 hidden md:block" />
+        <div className="h-5 w-px bg-white/10 hidden md:block" />
 
         <div className="flex flex-col items-end hidden md:flex">
-          <div className="text-xs font-mono font-bold text-slate-300">
+          <div className="text-sm font-mono font-bold text-slate-300 tabular-nums">
             {currentTime ? currentTime.toLocaleTimeString('en-US', { hour12: false }) : '--:--:--'}
           </div>
-          <div className="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">
+          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
             {currentTime ? currentTime.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '---'}
           </div>
         </div>
