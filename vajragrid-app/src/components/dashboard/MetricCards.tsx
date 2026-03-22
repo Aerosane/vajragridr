@@ -126,32 +126,32 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
   };
 
   return (
-    <div data-testid="metric-cards" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div data-testid="metric-cards" className="grid grid-cols-2 gap-3">
       {metrics.map((metric, idx) => {
         const critical = isCritical(metric.label);
         return (
           <div
             key={idx}
-            className={`bg-white/[0.03] backdrop-blur-2xl border shadow-xl rounded-2xl p-5 group hover:bg-white/[0.05] transition-all duration-500 ${
+            className={`bg-white/[0.02] border rounded-xl p-3.5 group hover:bg-white/[0.04] transition-all duration-300 ${
               critical
                 ? 'border-amber-500/30 ring-1 ring-amber-500/20 animate-pulse'
-                : 'border-white/[0.06] hover:border-white/[0.12]'
+                : 'border-white/5 hover:border-white/10'
             }`}
           >
-            <div className="flex justify-between items-start mb-3">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 group-hover:text-slate-400 transition-colors">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
                 {metric.label}
               </p>
               {getTrendIcon(metric.trend)}
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <p className={`text-2xl sm:text-3xl font-mono font-black tabular-nums bg-gradient-to-r ${metric.gradient} bg-clip-text text-transparent`}>
+            <div className="flex items-baseline gap-1">
+              <p className={`text-lg font-mono font-black tabular-nums bg-gradient-to-r ${metric.gradient} bg-clip-text text-transparent`}>
                 {metric.value}
               </p>
-              <span className="text-xs font-bold text-slate-600 uppercase">{metric.unit}</span>
+              <span className="text-[10px] font-bold text-zinc-600 uppercase">{metric.unit}</span>
             </div>
 
-            <div className="mt-4 h-[3px] w-full bg-white/[0.04] rounded-full overflow-hidden">
+            <div className="mt-3 h-[2px] w-full bg-white/[0.04] rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full bg-gradient-to-r ${metric.gradient} opacity-60 transition-all duration-1000 ease-in-out`}
                 style={{ width: getSparklineWidth(metric.label) }}

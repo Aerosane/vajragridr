@@ -72,7 +72,7 @@ export default function SystemStatusBar({ systemState, alertCount, simulationRun
   const freqColor = freq > 50.05 || freq < 49.95 ? 'text-amber-400' : 'text-emerald-400';
 
   return (
-    <div data-testid="status-bar" className="flex flex-wrap items-center justify-between px-4 sm:px-8 py-3 bg-[#060a14]/80 backdrop-blur-2xl border-b border-white/[0.04] text-slate-100 sticky top-0 z-40 gap-2 sm:gap-0">
+    <div data-testid="status-bar" className="flex flex-wrap items-center justify-between px-4 sm:px-6 py-2.5 bg-zinc-950/90 backdrop-blur-2xl border-b border-white/5 text-zinc-100 sticky top-0 z-40 gap-2 sm:gap-0">
       <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />

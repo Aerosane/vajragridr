@@ -347,23 +347,23 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
   }, [selectedNode]);
 
   return (
-    <div className="relative w-full h-full min-h-[400px] rounded-xl overflow-hidden">
+    <div className="relative w-full h-full min-h-[350px] rounded-xl overflow-hidden isolate">
       <Canvas
-        camera={{ position: [0, 50, 100], fov: 45 }}
+        camera={{ position: [0, 40, 70], fov: 45 }}
         style={{ width: '100%', height: '100%' }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
-        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
+        dpr={[1, 1.5]}
         onPointerMissed={handleCanvasClick}
       >
-        <color attach="background" args={['#060a14']} />
-        <fog attach="fog" args={['#060a14', 40, 80]} />
+        <color attach="background" args={['#09090b']} />
+        <fog attach="fog" args={['#09090b', 40, 80]} />
 
         <ambientLight intensity={0.2} />
         <directionalLight color="#0ea5e9" position={[10, 10, 10]} intensity={1.5} />
         <pointLight position={[0, 12, 0]} intensity={0.5} color="#3b82f6" distance={40} />
         <pointLight position={[-10, 6, -10]} intensity={0.3} color="#8b5cf6" distance={30} />
 
-        <Stars radius={100} depth={50} count={2000} factor={3} fade speed={0.3} />
+        <Stars radius={100} depth={50} count={1200} factor={3} fade speed={0.3} />
 
         <Grid
           position={[0, -2.5, 0]}
@@ -395,8 +395,8 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
           />
         ))}
 
-        <EffectComposer>
-          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} mipmapBlur intensity={1.5} />
+        <EffectComposer multisampling={0}>
+          <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.9} mipmapBlur intensity={1.2} resolutionScale={0.5} />
         </EffectComposer>
 
         <OrbitControls enablePan={false} enableZoom={true} minDistance={15} maxDistance={50} maxPolarAngle={Math.PI / 2.2} autoRotate={!selectedNode} autoRotateSpeed={0.4} />
