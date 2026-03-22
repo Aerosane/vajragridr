@@ -12,18 +12,25 @@ const MITRE_TACTIC_MAP: Record<string, { id: string; name: string }> = {
   'TA0040': { id: 'TA0040', name: 'Impact' },
 };
 
-const SEVERITY_COLORS = {
-  CRITICAL: 'text-red-400 bg-red-500/20 border-red-500/50',
-  HIGH: 'text-orange-400 bg-orange-500/20 border-orange-500/50',
-  MEDIUM: 'text-yellow-400 bg-yellow-500/20 border-yellow-500/50',
-  LOW: 'text-blue-400 bg-blue-500/20 border-blue-500/50',
+const SEV_BORDER: Record<string, string> = {
+  CRITICAL: 'border-l-red-500',
+  HIGH: 'border-l-orange-500',
+  MEDIUM: 'border-l-amber-500',
+  LOW: 'border-l-blue-500',
+};
+
+const SEV_BADGE: Record<string, string> = {
+  CRITICAL: 'bg-red-500/15 text-red-400 border-red-500/30',
+  HIGH: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  MEDIUM: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  LOW: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
 };
 
 const LAYER_BADGES: Record<string, { color: string; label: string }> = {
-  RULES: { color: 'bg-blue-500/30 text-blue-300', label: 'Rules' },
-  PHYSICS: { color: 'bg-cyan-500/30 text-cyan-300', label: 'Physics' },
-  STATISTICAL: { color: 'bg-purple-500/30 text-purple-300', label: 'Statistical' },
-  ML: { color: 'bg-pink-500/30 text-pink-300', label: 'ML/ONNX' },
+  RULES: { color: 'bg-blue-500/20 text-blue-300 border border-blue-500/20', label: 'Rules' },
+  PHYSICS: { color: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/20', label: 'Physics' },
+  STATISTICAL: { color: 'bg-purple-500/20 text-purple-300 border border-purple-500/20', label: 'Stats' },
+  ML: { color: 'bg-pink-500/20 text-pink-300 border border-pink-500/20', label: 'ML/ONNX' },
 };
 
 interface Props {
@@ -32,88 +39,80 @@ interface Props {
 
 export default function ExplainableAlertCard({ alert }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const sevColors = SEVERITY_COLORS[alert.severity] || SEVERITY_COLORS.MEDIUM;
-
-  // Extract MITRE tactic ID
+  const borderColor = SEV_BORDER[alert.severity] || SEV_BORDER.MEDIUM;
+  const badgeColor = SEV_BADGE[alert.severity] || SEV_BADGE.MEDIUM;
   const mitreTacticId = alert.mitreTactic?.match(/T\d{4}|TA\d{4}/)?.[0] || '';
   const mitreTactic = MITRE_TACTIC_MAP[mitreTacticId];
 
   return (
-    <div className={`border rounded-lg transition-all ${expanded ? 'bg-slate-800/80 border-slate-600' : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'}`}>
-      {/* Header — always visible */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full text-left p-3 flex items-start gap-3"
-      >
-        {/* Severity badge */}
-        <div className={`px-1.5 py-0.5 rounded border text-[9px] font-black shrink-0 ${sevColors}`}>
+    <div className={`border-l-[3px] ${borderColor} rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-all duration-300 ${expanded ? 'bg-white/[0.04] border-white/[0.08]' : ''}`}>
+      {/* Header */}
+      <button onClick={() => setExpanded(!expanded)} className="w-full text-left p-4 flex items-start gap-3">
+        <div className={`px-2 py-0.5 rounded-lg border text-[10px] font-black shrink-0 ${badgeColor}`}>
           {alert.severity}
         </div>
-
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold text-slate-200 truncate">{alert.title}</div>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="text-sm font-bold text-slate-200 truncate">{alert.title}</div>
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {alert.detectionLayers.map(layer => (
-              <span key={layer} className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${LAYER_BADGES[layer]?.color || 'bg-slate-700 text-slate-400'}`}>
+              <span key={layer} className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${LAYER_BADGES[layer]?.color || 'bg-slate-700 text-slate-400'}`}>
                 {LAYER_BADGES[layer]?.label || layer}
               </span>
             ))}
-            <span className="text-[9px] font-mono text-slate-600">
-              {(alert.confidence * 100).toFixed(0)}% conf
+            <span className="text-xs font-mono text-slate-600 tabular-nums">
+              {(alert.confidence * 100).toFixed(0)}%
             </span>
           </div>
         </div>
-
-        <span className="text-slate-600 text-xs shrink-0">{expanded ? '▼' : '▶'}</span>
+        <svg className={`w-4 h-4 text-slate-600 shrink-0 transition-transform duration-300 ${expanded ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
 
-      {/* Expanded detail — Explainability */}
+      {/* Expanded */}
       {expanded && (
-        <div className="px-3 pb-3 space-y-3 border-t border-slate-700/50 pt-3">
-          {/* Description */}
-          <p className="text-[10px] text-slate-400 leading-relaxed">{alert.description}</p>
+        <div className="px-4 pb-4 space-y-3 border-t border-white/[0.05] pt-3">
+          <p className="text-xs text-slate-400 leading-relaxed">{alert.description}</p>
 
-          {/* Why it triggered — Indicators */}
+          {/* Indicators */}
           <div>
-            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Why VajraGrid flagged this:</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detection Indicators</div>
             <div className="space-y-1.5">
               {alert.indicators.map((ind, i) => (
-                <div key={i} className="flex items-center gap-2 bg-slate-950/50 rounded px-2 py-1.5">
-                  <span className="text-[9px] font-mono font-bold text-slate-400 w-24 shrink-0">{ind.parameter}</span>
-                  <span className="text-[9px] font-mono text-slate-600">{ind.busId}</span>
-                  <span className="text-[9px] font-mono text-red-400 ml-auto">{ind.deviation}</span>
+                <div key={i} className="flex items-center gap-3 bg-white/[0.02] rounded-lg px-3 py-2 border border-white/[0.04]">
+                  <span className="text-xs font-mono font-bold text-slate-400 w-24 shrink-0">{ind.parameter}</span>
+                  <span className="text-xs font-mono text-slate-600">{ind.busId}</span>
+                  <span className="text-xs font-mono text-red-400 ml-auto font-bold">{ind.deviation}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* MITRE ATT&CK */}
+          {/* MITRE */}
           {mitreTactic && (
-            <div className="flex items-center gap-2 bg-slate-950/50 rounded px-2 py-1.5">
-              <span className="text-[9px] font-bold text-slate-500">MITRE ICS:</span>
-              <span className="text-[9px] font-mono text-amber-400">{mitreTactic.id}</span>
-              <span className="text-[9px] text-slate-400">{mitreTactic.name}</span>
+            <div className="flex items-center gap-3 bg-amber-500/5 rounded-lg px-3 py-2 border border-amber-500/10">
+              <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="text-xs font-bold text-slate-500">MITRE ICS:</span>
+              <span className="text-xs font-mono font-bold text-amber-400">{mitreTactic.id}</span>
+              <span className="text-xs text-slate-400">{mitreTactic.name}</span>
             </div>
           )}
 
-          {/* Affected Assets */}
+          {/* Assets */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[9px] font-bold text-slate-500">Assets:</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase">Affected:</span>
             {alert.affectedAssets.map(a => (
-              <span key={a} className="text-[9px] font-mono bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20">
+              <span key={a} className="text-xs font-mono bg-red-500/8 text-red-400 px-2 py-0.5 rounded-lg border border-red-500/15">
                 {a}
               </span>
             ))}
           </div>
 
           {/* Recommendation */}
-          <div className="bg-blue-950/30 border border-blue-800/30 rounded px-2 py-1.5">
-            <span className="text-[9px] font-bold text-blue-400">↳ </span>
-            <span className="text-[9px] text-blue-300/80">{alert.recommendation}</span>
+          <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2">
+            <span className="text-xs font-bold text-blue-400">↳ </span>
+            <span className="text-xs text-blue-300/80">{alert.recommendation}</span>
           </div>
 
-          {/* Timestamp */}
-          <div className="text-[8px] font-mono text-slate-700 text-right">
+          <div className="text-[10px] font-mono text-slate-700 text-right tabular-nums">
             {new Date(alert.timestamp).toLocaleTimeString()}
           </div>
         </div>

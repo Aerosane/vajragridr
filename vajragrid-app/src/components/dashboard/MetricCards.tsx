@@ -15,11 +15,21 @@ function compareTrend(current: number, prev: number): Trend {
   return 'neutral';
 }
 
+/* Inline SVG icons */
+const TrendUp = () => (
+  <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M7 17l5-5 5 5M7 7l5-5 5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
+const TrendDown = () => (
+  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M7 7l5 5 5-5M7 17l5 5 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
+const TrendNeutral = () => (
+  <svg className="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14" strokeLinecap="round"/></svg>
+);
+
 export default function MetricCards({ systemState }: MetricCardsProps) {
   const [prev, setPrev] = useState<SystemState | null>(null);
   const [trends, setTrends] = useState<Record<string, Trend>>({});
 
-  // React 19 pattern: derive state from props without useEffect
   if (systemState && prev && systemState !== prev) {
     setTrends({
       gen: compareTrend(systemState.totalGeneration, prev.totalGeneration),
@@ -32,23 +42,30 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
     setPrev(systemState);
   }
 
-  const getTrendIcon = (trend?: 'up' | 'down' | 'neutral') => {
-    if (trend === 'up') return <span className="text-emerald-500 ml-1">↑</span>;
-    if (trend === 'down') return <span className="text-red-500 ml-1">↓</span>;
-    return <span className="text-slate-500 ml-1">→</span>;
+  const getTrendIcon = (trend?: Trend) => {
+    if (trend === 'up') return <TrendUp />;
+    if (trend === 'down') return <TrendDown />;
+    return <TrendNeutral />;
   };
 
   const getFrequencyColor = (freq: number) => {
-    if (freq < 49.5 || freq > 50.5) return 'text-red-500';
-    if (freq < 49.9 || freq > 50.1) return 'text-amber-500';
+    if (freq < 49.5 || freq > 50.5) return 'text-red-400';
+    if (freq < 49.9 || freq > 50.1) return 'text-amber-400';
     return 'text-emerald-400';
   };
 
   const getBalanceColor = (balance: number) => {
     const deviation = Math.abs(1 - balance);
-    if (deviation > 0.1) return 'text-red-500';
-    if (deviation > 0.05) return 'text-amber-500';
+    if (deviation > 0.1) return 'text-red-400';
+    if (deviation > 0.05) return 'text-amber-400';
     return 'text-emerald-400';
+  };
+
+  const isCritical = (label: string) => {
+    if (!systemState) return false;
+    if (label === 'System Frequency') return systemState.systemFrequency < 49.5 || systemState.systemFrequency > 50.5;
+    if (label === 'Supply Balance') return Math.abs(1 - systemState.generationLoadBalance) > 0.1;
+    return false;
   };
 
   const metrics = [
@@ -57,38 +74,42 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
       value: systemState?.totalGeneration != null ? `${systemState.totalGeneration.toFixed(2)}` : '---',
       unit: 'MW',
       trend: trends.gen,
+      gradient: 'from-blue-400 to-cyan-400',
       color: 'text-blue-400',
-      isActive: true,
     },
     {
       label: 'Operational Load',
       value: systemState?.totalLoad != null ? `${systemState.totalLoad.toFixed(2)}` : '---',
       unit: 'MW',
       trend: trends.load,
+      gradient: 'from-indigo-400 to-purple-400',
       color: 'text-indigo-400',
-      isActive: true,
     },
     {
       label: 'System Frequency',
       value: systemState?.systemFrequency != null ? `${systemState.systemFrequency.toFixed(3)}` : '---',
       unit: 'Hz',
       trend: trends.freq,
+      gradient: systemState?.systemFrequency != null
+        ? (systemState.systemFrequency < 49.9 || systemState.systemFrequency > 50.1 ? 'from-amber-400 to-red-400' : 'from-emerald-400 to-cyan-400')
+        : 'from-slate-500 to-slate-600',
       color: systemState?.systemFrequency != null ? getFrequencyColor(systemState.systemFrequency) : 'text-slate-400',
-      isActive: systemState?.systemFrequency != null ? (systemState.systemFrequency < 49.9 || systemState.systemFrequency > 50.1) : false,
     },
     {
       label: 'Supply Balance',
       value: systemState?.generationLoadBalance != null ? `${(systemState.generationLoadBalance * 100).toFixed(2)}` : '---',
       unit: '%',
       trend: trends.balance,
+      gradient: systemState?.generationLoadBalance != null
+        ? (Math.abs(1 - systemState.generationLoadBalance) > 0.05 ? 'from-amber-400 to-orange-400' : 'from-emerald-400 to-blue-400')
+        : 'from-slate-500 to-slate-600',
       color: systemState?.generationLoadBalance != null ? getBalanceColor(systemState.generationLoadBalance) : 'text-slate-400',
-      isActive: systemState?.generationLoadBalance != null ? Math.abs(1 - systemState.generationLoadBalance) > 0.05 : false,
     },
   ];
 
-  const getSparklineWidth = (metric: typeof metrics[0]) => {
+  const getSparklineWidth = (label: string) => {
     if (!systemState) return '0%';
-    switch (metric.label) {
+    switch (label) {
       case 'Generation Output':
         return `${Math.min(100, (systemState.totalGeneration / 150) * 100)}%`;
       case 'Operational Load':
@@ -106,34 +127,39 @@ export default function MetricCards({ systemState }: MetricCardsProps) {
 
   return (
     <div data-testid="metric-cards" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {metrics.map((metric, idx) => (
-        <div 
-          key={idx} 
-          className={`bg-white/[0.03] backdrop-blur-2xl border border-white/[0.06] shadow-xl rounded-2xl p-5 group hover:border-white/[0.12] hover:bg-white/[0.05] transition-all duration-500 ${metric.isActive ? 'ring-1 ring-amber-500/20' : ''}`}
-        >
-          <div className="flex justify-between items-start mb-3">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 group-hover:text-slate-400 transition-colors">
-              {metric.label}
-            </p>
-            <div className="text-sm">
+      {metrics.map((metric, idx) => {
+        const critical = isCritical(metric.label);
+        return (
+          <div
+            key={idx}
+            className={`bg-white/[0.03] backdrop-blur-2xl border shadow-xl rounded-2xl p-5 group hover:bg-white/[0.05] transition-all duration-500 ${
+              critical
+                ? 'border-amber-500/30 ring-1 ring-amber-500/20 animate-pulse'
+                : 'border-white/[0.06] hover:border-white/[0.12]'
+            }`}
+          >
+            <div className="flex justify-between items-start mb-3">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 group-hover:text-slate-400 transition-colors">
+                {metric.label}
+              </p>
               {getTrendIcon(metric.trend)}
             </div>
+            <div className="flex items-baseline gap-1.5">
+              <p className={`text-2xl sm:text-3xl font-mono font-black tabular-nums bg-gradient-to-r ${metric.gradient} bg-clip-text text-transparent`}>
+                {metric.value}
+              </p>
+              <span className="text-xs font-bold text-slate-600 uppercase">{metric.unit}</span>
+            </div>
+
+            <div className="mt-4 h-[3px] w-full bg-white/[0.04] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${metric.gradient} opacity-60 transition-all duration-1000 ease-in-out`}
+                style={{ width: getSparklineWidth(metric.label) }}
+              />
+            </div>
           </div>
-          <div className="flex items-baseline gap-1.5">
-            <p className={`text-2xl sm:text-3xl font-mono font-black tabular-nums ${metric.color}`}>
-              {metric.value}
-            </p>
-            <span className="text-xs font-bold text-slate-600 uppercase">{metric.unit}</span>
-          </div>
-          
-          <div className="mt-4 h-[3px] w-full bg-white/[0.04] rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full bg-current ${metric.color} opacity-50 transition-all duration-1000 ease-in-out`}
-              style={{ width: getSparklineWidth(metric) }}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
