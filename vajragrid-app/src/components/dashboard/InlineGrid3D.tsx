@@ -2,19 +2,18 @@
 
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Text } from '@react-three/drei';
+import { OrbitControls, Stars, Text, Line, Grid } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 import type { ShieldData } from '@/hooks/usePollingGridData';
 
-const V_NOM = 230;
-
 const BUS_POS: Record<string, [number, number, number]> = {
   'BUS-001': [0, 0, 0],
-  'BUS-002': [-10, 0, 7],
-  'BUS-003': [10, 0, 7],
-  'BUS-004': [-8, 0, -9],
-  'BUS-005': [8, 0, -9],
+  'BUS-002': [-12, 0, 8],
+  'BUS-003': [12, 0, 8],
+  'BUS-004': [-10, 0, -10],
+  'BUS-005': [10, 0, -10],
 };
 
 const BUS_META: Record<string, { name: string; short: string }> = {
@@ -56,81 +55,86 @@ function getLineColor(lineId: string, shield: ShieldData | null, alerts: ThreatA
 function SubstationNode({ busId, telemetry, color }: { busId: string; telemetry?: GridTelemetry; color: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
   const pos = BUS_POS[busId];
   const meta = BUS_META[busId];
   const isAttacked = color === '#ef4444' || color === '#f97316';
   const isHealing = color === '#22d3ee';
-  const voltage = telemetry ? telemetry.voltage / V_NOM : 1;
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
     const t = clock.getElapsedTime();
-    // Gentle float
     meshRef.current.position.y = pos[1] + Math.sin(t * 0.8 + pos[0]) * 0.15;
-    // Pulse on attack
-    if (isAttacked && glowRef.current) {
-      const scale = 1.8 + Math.sin(t * 4) * 0.3;
+    if (glowRef.current) {
+      const scale = isAttacked ? 2.0 + Math.sin(t * 4) * 0.4 : 1.8;
       glowRef.current.scale.setScalar(scale);
-    } else if (glowRef.current) {
-      glowRef.current.scale.setScalar(1.6);
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.z = t * 0.3;
     }
   });
 
   return (
     <group position={pos}>
-      {/* Glow halo */}
-      <mesh ref={glowRef} position={[0, 0, 0]}>
-        <sphereGeometry args={[0.9, 16, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={isAttacked ? 0.15 : 0.06} />
+      {/* Outer glow halo */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[1.0, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={isAttacked ? 0.18 : 0.06} />
       </mesh>
 
       {/* Core sphere */}
       <mesh ref={meshRef} castShadow>
-        <sphereGeometry args={[0.55, 32, 32]} />
+        <sphereGeometry args={[0.6, 32, 32]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={isAttacked ? 1.5 : isHealing ? 1.2 : 0.4}
-          metalness={0.7}
-          roughness={0.2}
+          emissiveIntensity={isAttacked ? 2.0 : isHealing ? 1.5 : 0.6}
+          metalness={0.8}
+          roughness={0.15}
+          toneMapped={false}
         />
       </mesh>
 
-      {/* Ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <ringGeometry args={[0.8, 1.0, 32]} />
-        <meshBasicMaterial color={color} transparent opacity={0.2} side={THREE.DoubleSide} />
+      {/* Rotating ring */}
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.9, 1.05, 48]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={isAttacked ? 0.4 : 0.15}
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
       </mesh>
 
       {/* Label */}
       <Text
-        position={[0, -1.3, 0]}
-        fontSize={0.4}
+        position={[0, -1.5, 0]}
+        fontSize={0.45}
         color="#94a3b8"
         anchorX="center"
         anchorY="top"
-        font="/fonts/inter-bold.woff"
-        outlineWidth={0.02}
+        outlineWidth={0.025}
         outlineColor="#000"
       >
         {meta.name}
       </Text>
       <Text
-        position={[0, -1.7, 0]}
-        fontSize={0.28}
+        position={[0, -2.0, 0]}
+        fontSize={0.3}
         color="#64748b"
         anchorX="center"
         anchorY="top"
-        outlineWidth={0.01}
+        outlineWidth={0.015}
         outlineColor="#000"
       >
-        {telemetry ? `${telemetry.voltage.toFixed(0)}kV • ${telemetry.frequency.toFixed(1)}Hz` : 'OFFLINE'}
+        {telemetry ? `${telemetry.voltage.toFixed(0)}kV · ${telemetry.frequency.toFixed(1)}Hz` : 'OFFLINE'}
       </Text>
     </group>
   );
 }
 
-/* ─── Transmission Line ────────────────────────────────────── */
+/* ─── Transmission Line (drei Line with glow) ─────────────── */
 function TransmissionLine({ lineId, shield, alerts }: { lineId: string; shield: ShieldData | null; alerts: ThreatAlert[] }) {
   const line = TX_LINES.find(l => l.id === lineId)!;
   const from = BUS_POS[line.from];
@@ -138,42 +142,24 @@ function TransmissionLine({ lineId, shield, alerts }: { lineId: string; shield: 
   const color = getLineColor(lineId, shield, alerts);
   const isTripped = shield?.trippedBreakers?.includes(lineId);
 
-  const mid = useMemo<[number, number, number]>(() => [
-    (from[0] + to[0]) / 2, 0.5, (from[2] + to[2]) / 2,
-  ], [from, to]);
-
-  // Use tube geometry instead of <line> to avoid SVG type conflict
-  const curve = useMemo(() => {
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(...from),
-      new THREE.Vector3(...mid),
-      new THREE.Vector3(...to),
-    ]);
-  }, [from, mid, to]);
+  const points = useMemo<[number, number, number][]>(() => {
+    const midY = 0.6;
+    return [
+      from,
+      [(from[0] + to[0]) / 2, midY, (from[2] + to[2]) / 2],
+      to,
+    ];
+  }, [from, to]);
 
   return (
-    <mesh>
-      <tubeGeometry args={[curve, 20, 0.04, 6, false]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={isTripped ? 0.1 : 0.4}
-        transparent
-        opacity={isTripped ? 0.3 : 0.8}
-        metalness={0.6}
-        roughness={0.3}
-      />
-    </mesh>
-  );
-}
-
-/* ─── Ground Plane ─────────────────────────────────────────── */
-function GroundPlane() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
-      <planeGeometry args={[50, 50]} />
-      <meshStandardMaterial color="#080d1a" metalness={0.9} roughness={0.8} />
-    </mesh>
+    <Line
+      points={points}
+      color={color}
+      lineWidth={isTripped ? 1 : 2.5}
+      transparent
+      opacity={isTripped ? 0.2 : 0.6}
+      toneMapped={false}
+    />
   );
 }
 
@@ -192,46 +178,74 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
   }, [latestTelemetry]);
 
   return (
-    <Canvas
-      camera={{ position: [0, 18, 22], fov: 40 }}
-      style={{ background: 'transparent' }}
-      gl={{ antialias: true, alpha: true }}
-    >
-      <color attach="background" args={['#060a14']} />
-      <fog attach="fog" args={['#060a14', 30, 60]} />
+    <div className="relative w-full h-full min-h-[400px] rounded-xl overflow-hidden">
+      <Canvas
+        camera={{ position: [0, 50, 100], fov: 45 }}
+        style={{ width: '100%', height: '100%' }}
+        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+        dpr={[1, 2]}
+      >
+        <color attach="background" args={['#060a14']} />
+        <fog attach="fog" args={['#060a14', 40, 80]} />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[10, 15, 10]} intensity={0.6} color="#8bb4ff" />
-      <pointLight position={[0, 8, 0]} intensity={0.4} color="#3b82f6" />
+        {/* Lighting */}
+        <ambientLight intensity={0.2} />
+        <directionalLight color="#0ea5e9" position={[10, 10, 10]} intensity={1.5} />
+        <pointLight position={[0, 12, 0]} intensity={0.5} color="#3b82f6" distance={40} />
+        <pointLight position={[-10, 6, -10]} intensity={0.3} color="#8b5cf6" distance={30} />
 
-      <Stars radius={80} depth={40} count={1500} factor={3} fade speed={0.5} />
-      <GroundPlane />
+        <Stars radius={100} depth={50} count={2000} factor={3} fade speed={0.3} />
 
-      {/* Transmission lines */}
-      {TX_LINES.map(l => (
-        <TransmissionLine key={l.id} lineId={l.id} shield={shield} alerts={alerts} />
-      ))}
-
-      {/* Bus nodes */}
-      {Object.keys(BUS_POS).map(busId => (
-        <SubstationNode
-          key={busId}
-          busId={busId}
-          telemetry={telMap.get(busId)}
-          color={getNodeColor(busId, alerts, shield)}
+        {/* High-tech floor grid */}
+        <Grid
+          position={[0, -2.5, 0]}
+          args={[60, 60]}
+          cellSize={2}
+          cellThickness={0.5}
+          cellColor="#1e293b"
+          sectionSize={10}
+          sectionThickness={1}
+          sectionColor="#334155"
+          fadeDistance={50}
+          fadeStrength={1.2}
+          infiniteGrid
         />
-      ))}
 
-      <OrbitControls
-        enablePan={false}
-        enableZoom={true}
-        minDistance={10}
-        maxDistance={35}
-        maxPolarAngle={Math.PI / 2.2}
-        autoRotate
-        autoRotateSpeed={0.3}
-      />
-    </Canvas>
+        {/* Transmission lines */}
+        {TX_LINES.map(l => (
+          <TransmissionLine key={l.id} lineId={l.id} shield={shield} alerts={alerts} />
+        ))}
+
+        {/* Bus nodes */}
+        {Object.keys(BUS_POS).map(busId => (
+          <SubstationNode
+            key={busId}
+            busId={busId}
+            telemetry={telMap.get(busId)}
+            color={getNodeColor(busId, alerts, shield)}
+          />
+        ))}
+
+        {/* Postprocessing: Bloom glow */}
+        <EffectComposer>
+          <Bloom
+            luminanceThreshold={0.2}
+            luminanceSmoothing={0.9}
+            mipmapBlur
+            intensity={1.5}
+          />
+        </EffectComposer>
+
+        <OrbitControls
+          enablePan={false}
+          enableZoom={true}
+          minDistance={15}
+          maxDistance={50}
+          maxPolarAngle={Math.PI / 2.2}
+          autoRotate
+          autoRotateSpeed={0.4}
+        />
+      </Canvas>
+    </div>
   );
 }
