@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e1a;
+  --background: #09090b;
   --foreground: #e2e8f0;
 }
 
@@ -32,7 +32,7 @@ body::before {
   z-index: 1000;
   background-size: 100% 4px, 3px 100%;
   pointer-events: none;
-  opacity: 0.3;
+  opacity: 0.08;
 }
 
 ::selection {
@@ -45,14 +45,14 @@ body::before {
   width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #18181b;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #3f3f46;
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #52525b;
 }
 
 /* React Flow dark theme overrides */

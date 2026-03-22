@@ -62,12 +62,12 @@ export default function MitreAttackMatrix({ alerts }: Props) {
   const hasActive = activeTechniques.size > 0;
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+    <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black uppercase tracking-[0.15em] text-slate-300">🎯 MITRE ATT&CK for ICS</span>
+          <span className="text-sm font-black uppercase tracking-[0.15em] text-zinc-300">🎯 MITRE ATT&CK for ICS</span>
           {hasActive && (
-            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+            <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
               {activeTechniques.size} MATCHED
             </span>
           )}
@@ -80,8 +80,8 @@ export default function MitreAttackMatrix({ alerts }: Props) {
           return (
             <div key={tactic.id} className="space-y-1">
               {/* Tactic header */}
-              <div className={`text-[8px] font-bold uppercase text-center py-1 rounded transition-all ${
-                isActive ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-800/50 text-slate-500 border border-slate-800'
+              <div className={`text-[10px] font-bold uppercase text-center py-1 rounded transition-all ${
+                isActive ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800'
               }`}>
                 {tactic.name}
               </div>
@@ -93,10 +93,10 @@ export default function MitreAttackMatrix({ alerts }: Props) {
                 return (
                   <div
                     key={techId}
-                    className={`text-[7px] px-1 py-1 rounded text-center transition-all ${
+                    className={`text-[10px] px-1 py-1 rounded text-center transition-all ${
                       isTechActive
                         ? 'bg-red-500/30 text-red-300 border border-red-500/40 ring-1 ring-red-500/20'
-                        : 'bg-slate-800/30 text-slate-600 border border-slate-800/50'
+                        : 'bg-slate-800/30 text-zinc-500 border border-slate-800/50'
                     }`}
                     title={`${techId}: ${tech.name}`}
                   >
@@ -111,7 +111,7 @@ export default function MitreAttackMatrix({ alerts }: Props) {
       </div>
 
       {!hasActive && (
-        <div className="text-[9px] text-slate-600 font-mono text-center mt-2">
+        <div className="text-xs text-zinc-400 font-mono text-center mt-2">
           No active attack coverage — inject an attack to see mapping
         </div>
       )}

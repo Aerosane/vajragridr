@@ -22,15 +22,16 @@ export default function MQTTPacketInspector({ packets, liveAttacks }: Props) {
 
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl w-full">
-      <div className="px-3 sm:px-6 py-3 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+      <div className="px-3 sm:px-6 py-3 border-b border-slate-700 bg-zinc-800/50 flex justify-between items-center">
         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-100 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           MQTT Inspector
         </h2>
-        <span className="text-[9px] font-mono text-slate-600">{packets.length} packets</span>
+
+        <span className="text-xs font-mono text-slate-600">{packets.length} packets</span>
       </div>
 
-      <div className="h-48 overflow-y-auto font-mono text-[9px] leading-relaxed bg-slate-950/80">
+      <div className="h-48 overflow-y-auto font-mono text-xs leading-relaxed bg-zinc-950/80">
         {packets.length === 0 ? (
           <div className="p-4 text-slate-600 text-center">Waiting for MQTT packets...</div>
         ) : (
@@ -42,7 +43,7 @@ export default function MQTTPacketInspector({ packets, liveAttacks }: Props) {
             return (
               <div
                 key={`${pkt.timestamp}-${i}`}
-                className={`flex items-center gap-2 px-3 py-0.5 border-b border-slate-900 transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1 border-b border-slate-900 transition-colors ${
                   isAttacked ? 'bg-red-950/40 hover:bg-red-950/60' : 'hover:bg-slate-900/50'
                 }`}
               >

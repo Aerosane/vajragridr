@@ -70,10 +70,10 @@ export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsPro
 
   if (!mounted) {
     return (
-      <div className="flex flex-col gap-6 p-4 bg-slate-900/50 rounded-lg">
+      <div className="flex flex-col gap-6 p-4 bg-zinc-900/40 rounded-lg">
         {['Voltage Levels (kV) — Per Bus', 'System Frequency (Hz)', 'Active Power (MW) — Per Bus'].map(title => (
-          <div key={title} className="w-full h-48 sm:h-64 bg-slate-950/50 p-2 sm:p-4 border border-slate-700 rounded shadow-inner">
-            <h3 className="text-[10px] sm:text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">{title}</h3>
+          <div key={title} className="w-full h-48 sm:h-64 bg-zinc-950/50 p-2 sm:p-4 border border-slate-700 rounded shadow-inner">
+            <h3 className="text-xs sm:text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">{title}</h3>
             <div className="w-full h-36 sm:h-48 flex items-center justify-center text-slate-600 text-xs">Loading chart...</div>
           </div>
         ))}
@@ -82,7 +82,7 @@ export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsPro
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-2 sm:p-4 bg-slate-900/50 rounded-lg">
+    <div className="flex flex-col gap-4 sm:gap-6 p-2 sm:p-4 bg-zinc-900/40 rounded-lg">
       <ChartContainer title="Voltage Levels (kV) — Per Bus">
         <LineChart data={chartData} margin={{ left: -15, right: 5, top: 5, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -148,8 +148,8 @@ export default function TelemetryCharts({ telemetryHistory }: TelemetryChartsPro
 
 function ChartContainer({ title, children }: { title: string; children: React.ReactElement }) {
   return (
-    <div className="w-full h-48 sm:h-64 bg-slate-950/50 p-2 sm:p-4 border border-slate-700 rounded shadow-inner overflow-hidden">
-      <h3 className="text-[10px] sm:text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest pl-1">{title}</h3>
+    <div className="w-full h-48 sm:h-64 bg-zinc-950/50 p-2 sm:p-4 border border-slate-700 rounded shadow-inner overflow-hidden">
+      <h3 className="text-xs sm:text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest pl-1">{title}</h3>
       <div className="w-full h-36 sm:h-48 min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           {children}

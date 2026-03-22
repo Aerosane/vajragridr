@@ -24,7 +24,6 @@
     "onnxruntime-web": "^1.24.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-resizable-panels": "^4.7.4",
     "recharts": "^3.7.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",

@@ -53,11 +53,11 @@ export default function ConfidenceRadar({ killChain, alertConfidence }: Props) {
   const rings = [0.25, 0.5, 0.75, 1.0];
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+    <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-black uppercase tracking-[0.15em] text-slate-300">🕸️ Detection Confidence</span>
+        <span className="text-sm font-black uppercase tracking-[0.15em] text-zinc-300">🕸️ Detection Confidence</span>
         {hasData && (
-          <span className="text-[9px] font-mono text-slate-500">
+          <span className="text-xs font-mono text-zinc-500">
             {DIMENSIONS.filter(d => scores[d.key] > 0.1).length}/{DIMENSIONS.length} layers active
           </span>
         )}
@@ -123,7 +123,7 @@ export default function ConfidenceRadar({ killChain, alertConfidence }: Props) {
                 y={p.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className={`text-[7px] font-bold ${score > 0.4 ? 'fill-red-400' : 'fill-slate-500'}`}
+                className={`text-[10px] font-bold ${score > 0.4 ? 'fill-red-400' : 'fill-zinc-400'}`}
               >
                 {dim.label}
               </text>
@@ -136,11 +136,11 @@ export default function ConfidenceRadar({ killChain, alertConfidence }: Props) {
       <div className="flex justify-center gap-4 mt-2">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[8px] text-slate-500">Normal</span>
+          <span className="text-xs text-slate-500">Normal</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500" />
-          <span className="text-[8px] text-slate-500">Anomalous</span>
+          <span className="text-xs text-slate-500">Anomalous</span>
         </div>
       </div>
     </div>
