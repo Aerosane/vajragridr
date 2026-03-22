@@ -184,7 +184,7 @@ export default function Home() {
           {/* Tab content — scrollable */}
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 space-y-4">
             {rightTab === 'shield' && (
-              <div className={`${glass} p-0 overflow-hidden`}>
+              <div className={`${glass} p-0 overflow-hidden h-full flex flex-col`}>
                 <HealingTimeline
                   activeEvents={shield?.activeEvents || []}
                   completedEvents={shield?.completedEvents || []}

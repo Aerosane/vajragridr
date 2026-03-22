@@ -196,7 +196,7 @@ export default function HealingTimeline({
   const hasActivity = activeEvents.length > 0 || completedEvents.length > 0;
 
   return (
-    <div data-testid="healing-timeline" className="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4">
+    <div data-testid="healing-timeline" className="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${
@@ -234,11 +234,11 @@ export default function HealingTimeline({
 
       {/* Completed events — clickable */}
       {completedEvents.length > 0 && (
-        <div>
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 shrink-0">
             Healed ({completedEvents.length}) — click for details
           </div>
-          <div className="space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+          <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
             {completedEvents.slice(0, 10).map(e => (
               <CompletedEvent
                 key={e.id}
