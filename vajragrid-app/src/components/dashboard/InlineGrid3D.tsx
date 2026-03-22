@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Text, Line, Grid } from '@react-three/drei';
+import React, { useRef, useMemo, useState, useCallback } from 'react';
+import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
+import { OrbitControls, Stars, Line, Grid, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
@@ -16,12 +16,12 @@ const BUS_POS: Record<string, [number, number, number]> = {
   'BUS-005': [10, 0, -10],
 };
 
-const BUS_META: Record<string, { name: string; short: string }> = {
-  'BUS-001': { name: 'Indrapura', short: 'GEN' },
-  'BUS-002': { name: 'Vajra Solar', short: 'SOL' },
-  'BUS-003': { name: 'Shakti Nagar', short: 'LOAD' },
-  'BUS-004': { name: 'Kavach Grid', short: 'LOAD' },
-  'BUS-005': { name: 'Sudarshan', short: 'LOAD' },
+const BUS_META: Record<string, { name: string; type: string; short: string }> = {
+  'BUS-001': { name: 'Indrapura', type: 'Generator', short: 'GEN' },
+  'BUS-002': { name: 'Vajra Solar', type: 'Solar Farm', short: 'SOL' },
+  'BUS-003': { name: 'Shakti Nagar', type: 'Load Center', short: 'LOAD' },
+  'BUS-004': { name: 'Kavach Grid', type: 'Load Center', short: 'LOAD' },
+  'BUS-005': { name: 'Sudarshan', type: 'Load Center', short: 'LOAD' },
 };
 
 const TX_LINES = [
@@ -33,14 +33,15 @@ const TX_LINES = [
   { id: 'TL-06', from: 'BUS-002', to: 'BUS-003' },
 ];
 
-function getNodeColor(busId: string, alerts: ThreatAlert[], shield: ShieldData | null): string {
-  if (shield?.isolatedBuses?.includes(busId)) return '#f97316';
-  if (shield?.activeEvents?.find(e => e.affectedBus === busId)) return '#22d3ee';
+/* ─── Helpers ──────────────────────────────────────────────── */
+function getNodeStatus(busId: string, alerts: ThreatAlert[], shield: ShieldData | null): { color: string; label: string } {
+  if (shield?.isolatedBuses?.includes(busId)) return { color: '#f97316', label: 'ISOLATED' };
+  if (shield?.activeEvents?.find(e => e.affectedBus === busId)) return { color: '#22d3ee', label: 'HEALING' };
   const a = alerts.filter(x => x.affectedAssets.includes(busId) && x.status === 'ACTIVE');
-  if (a.some(x => x.severity === 'CRITICAL')) return '#ef4444';
-  if (a.some(x => x.severity === 'HIGH')) return '#f97316';
-  if (a.some(x => x.severity === 'MEDIUM')) return '#eab308';
-  return '#3b82f6';
+  if (a.some(x => x.severity === 'CRITICAL')) return { color: '#ef4444', label: 'CRITICAL' };
+  if (a.some(x => x.severity === 'HIGH')) return { color: '#f97316', label: 'ALERT' };
+  if (a.some(x => x.severity === 'MEDIUM')) return { color: '#eab308', label: 'WARNING' };
+  return { color: '#3b82f6', label: 'NOMINAL' };
 }
 
 function getLineColor(lineId: string, shield: ShieldData | null, alerts: ThreatAlert[]): string {
@@ -51,91 +52,136 @@ function getLineColor(lineId: string, shield: ShieldData | null, alerts: ThreatA
   return '#1e40af';
 }
 
-/* ─── Substation Node (Glowing Sphere) ─────────────────────── */
-function SubstationNode({ busId, telemetry, color }: { busId: string; telemetry?: GridTelemetry; color: string }) {
+const STATUS_DOT: Record<string, string> = {
+  NOMINAL: 'bg-blue-500',
+  WARNING: 'bg-amber-500',
+  ALERT: 'bg-orange-500',
+  CRITICAL: 'bg-red-500 animate-pulse',
+  ISOLATED: 'bg-orange-500 animate-pulse',
+  HEALING: 'bg-cyan-500 animate-pulse',
+};
+
+/* ─── Substation Node ──────────────────────────────────────── */
+interface NodeProps {
+  busId: string;
+  telemetry?: GridTelemetry;
+  status: { color: string; label: string };
+  isSelected: boolean;
+  isDimmed: boolean;
+  onSelect: (busId: string) => void;
+}
+
+function SubstationNode({ busId, telemetry, status, isSelected, isDimmed, onSelect }: NodeProps) {
+  const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
   const pos = BUS_POS[busId];
   const meta = BUS_META[busId];
-  const isAttacked = color === '#ef4444' || color === '#f97316';
-  const isHealing = color === '#22d3ee';
+  const isAttacked = status.label === 'CRITICAL' || status.label === 'ALERT' || status.label === 'ISOLATED';
+  const isHealing = status.label === 'HEALING';
+  const targetScale = hovered || isSelected ? 1.15 : isDimmed ? 0.85 : 1.0;
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !groupRef.current) return;
     const t = clock.getElapsedTime();
     meshRef.current.position.y = pos[1] + Math.sin(t * 0.8 + pos[0]) * 0.15;
+    const s = groupRef.current.scale.x;
+    groupRef.current.scale.setScalar(THREE.MathUtils.lerp(s, targetScale, 0.08));
     if (glowRef.current) {
-      const scale = isAttacked ? 2.0 + Math.sin(t * 4) * 0.4 : 1.8;
-      glowRef.current.scale.setScalar(scale);
+      const gs = isAttacked ? 2.0 + Math.sin(t * 4) * 0.4 : 1.8;
+      glowRef.current.scale.setScalar(gs);
     }
-    if (ringRef.current) {
-      ringRef.current.rotation.z = t * 0.3;
-    }
+    if (ringRef.current) ringRef.current.rotation.z = t * 0.3;
   });
 
+  const handlePointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = 'pointer';
+  }, []);
+  const handlePointerOut = useCallback(() => {
+    setHovered(false);
+    document.body.style.cursor = 'auto';
+  }, []);
+  const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    onSelect(busId);
+  }, [busId, onSelect]);
+
+  const loadPct = telemetry ? Math.min(100, Math.abs(telemetry.activePower) / 30 * 100) : 0;
+
   return (
-    <group position={pos}>
-      {/* Outer glow halo */}
+    <group ref={groupRef} position={pos}>
       <mesh ref={glowRef}>
         <sphereGeometry args={[1.0, 16, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={isAttacked ? 0.18 : 0.06} />
+        <meshBasicMaterial color={status.color} transparent opacity={(isAttacked ? 0.18 : 0.06) * (isDimmed ? 0.4 : 1)} />
       </mesh>
 
-      {/* Core sphere */}
-      <mesh ref={meshRef} castShadow>
+      <mesh
+        ref={meshRef}
+        castShadow
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        onClick={handleClick}
+      >
         <sphereGeometry args={[0.6, 32, 32]} />
         <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={isAttacked ? 2.0 : isHealing ? 1.5 : 0.6}
+          color={status.color}
+          emissive={status.color}
+          emissiveIntensity={isAttacked ? 2.0 : isHealing ? 1.5 : hovered ? 1.0 : 0.6}
           metalness={0.8}
           roughness={0.15}
+          transparent={isDimmed}
+          opacity={isDimmed ? 0.4 : 1}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Rotating ring */}
       <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.9, 1.05, 48]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={isAttacked ? 0.4 : 0.15}
-          side={THREE.DoubleSide}
-          toneMapped={false}
-        />
+        <meshBasicMaterial color={status.color} transparent opacity={(isAttacked ? 0.4 : 0.15) * (isDimmed ? 0.3 : 1)} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
 
-      {/* Label */}
-      <Text
-        position={[0, -1.5, 0]}
-        fontSize={0.45}
-        color="#94a3b8"
-        anchorX="center"
-        anchorY="top"
-        outlineWidth={0.025}
-        outlineColor="#000"
-      >
-        {meta.name}
-      </Text>
-      <Text
-        position={[0, -2.0, 0]}
-        fontSize={0.3}
-        color="#64748b"
-        anchorX="center"
-        anchorY="top"
-        outlineWidth={0.015}
-        outlineColor="#000"
-      >
-        {telemetry ? `${telemetry.voltage.toFixed(0)}kV · ${telemetry.frequency.toFixed(1)}Hz` : 'OFFLINE'}
-      </Text>
+      {isSelected && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.2, 1.35, 64]} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={0.5} side={THREE.DoubleSide} toneMapped={false} />
+        </mesh>
+      )}
+
+      <Html position={[0, 1.8, 0]} center distanceFactor={20} style={{ pointerEvents: 'none', transition: 'all 0.3s ease', userSelect: 'none' }}>
+        {hovered ? (
+          <div className="bg-slate-900/85 backdrop-blur-lg border border-slate-600/60 rounded-lg p-3 w-52 shadow-2xl" style={{ pointerEvents: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-mono font-black text-slate-200 tracking-wider">{busId}</span>
+              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[status.label] || 'bg-slate-500'}`} />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between"><span className="text-[10px] text-slate-500 uppercase tracking-wider">Type</span><span className="text-[10px] font-mono text-slate-300">{meta.type}</span></div>
+              <div className="flex justify-between"><span className="text-[10px] text-slate-500 uppercase tracking-wider">Status</span><span className={`text-[10px] font-mono font-bold ${status.label === 'NOMINAL' ? 'text-blue-400' : status.label === 'HEALING' ? 'text-cyan-400' : 'text-red-400'}`}>{status.label}</span></div>
+              <div className="flex justify-between"><span className="text-[10px] text-slate-500 uppercase tracking-wider">Load</span><span className="text-[10px] font-mono text-slate-300 tabular-nums">{loadPct.toFixed(1)}%</span></div>
+              <div className="flex justify-between"><span className="text-[10px] text-slate-500 uppercase tracking-wider">Voltage</span><span className="text-[10px] font-mono text-slate-300 tabular-nums">{telemetry ? `${telemetry.voltage.toFixed(1)} kV` : '---'}</span></div>
+              <div className="h-[3px] w-full bg-slate-800 rounded-full overflow-hidden mt-1">
+                <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500" style={{ width: `${loadPct}%` }} />
+              </div>
+            </div>
+            <div className="text-[9px] text-slate-600 text-center mt-2 tracking-wider">Click to inspect</div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 bg-slate-900/70 backdrop-blur-md border border-slate-700/40 rounded-md px-2 py-1 shadow-lg" style={{ pointerEvents: 'none' }}>
+            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[status.label] || 'bg-slate-500'}`} />
+            <span className="text-[10px] font-mono font-bold text-slate-400 tracking-wider">{meta.short}</span>
+          </div>
+        )}
+      </Html>
     </group>
   );
 }
 
-/* ─── Transmission Line (drei Line with glow) ─────────────── */
-function TransmissionLine({ lineId, shield, alerts }: { lineId: string; shield: ShieldData | null; alerts: ThreatAlert[] }) {
+/* ─── Transmission Line ────────────────────────────────────── */
+function TransmissionLine({ lineId, shield, alerts, dimmed }: { lineId: string; shield: ShieldData | null; alerts: ThreatAlert[]; dimmed: boolean }) {
   const line = TX_LINES.find(l => l.id === lineId)!;
   const from = BUS_POS[line.from];
   const to = BUS_POS[line.to];
@@ -144,11 +190,7 @@ function TransmissionLine({ lineId, shield, alerts }: { lineId: string; shield: 
 
   const points = useMemo<[number, number, number][]>(() => {
     const midY = 0.6;
-    return [
-      from,
-      [(from[0] + to[0]) / 2, midY, (from[2] + to[2]) / 2],
-      to,
-    ];
+    return [from, [(from[0] + to[0]) / 2, midY, (from[2] + to[2]) / 2], to];
   }, [from, to]);
 
   return (
@@ -157,9 +199,115 @@ function TransmissionLine({ lineId, shield, alerts }: { lineId: string; shield: 
       color={color}
       lineWidth={isTripped ? 1 : 2.5}
       transparent
-      opacity={isTripped ? 0.2 : 0.6}
+      opacity={(isTripped ? 0.2 : 0.6) * (dimmed ? 0.25 : 1)}
       toneMapped={false}
     />
+  );
+}
+
+/* ─── Node Inspector Panel (2D overlay) ────────────────────── */
+function NodeInspector({ busId, telemetry, status, alerts, onClose }: {
+  busId: string;
+  telemetry?: GridTelemetry;
+  status: { color: string; label: string };
+  alerts: ThreatAlert[];
+  onClose: () => void;
+}) {
+  const meta = BUS_META[busId];
+  const busAlerts = alerts.filter(a => a.affectedAssets.includes(busId) && a.status === 'ACTIVE');
+  const temp = telemetry ? 35 + Math.abs(telemetry.activePower) * 0.5 + (telemetry.voltage - 230) * 0.1 : 0;
+
+  const rows: { label: string; value: string; color?: string }[] = [
+    { label: 'Voltage', value: telemetry ? `${telemetry.voltage.toFixed(2)} kV` : '---' },
+    { label: 'Frequency', value: telemetry ? `${telemetry.frequency.toFixed(3)} Hz` : '---',
+      color: telemetry && (telemetry.frequency < 49.9 || telemetry.frequency > 50.1) ? 'text-amber-400' : undefined },
+    { label: 'Active Power', value: telemetry ? `${telemetry.activePower.toFixed(2)} MW` : '---' },
+    { label: 'Reactive Power', value: telemetry ? `${telemetry.reactivePower.toFixed(2)} MVAR` : '---' },
+    { label: 'Current', value: telemetry ? `${telemetry.current.toFixed(1)} A` : '---' },
+    { label: 'Power Factor', value: telemetry ? telemetry.powerFactor.toFixed(3) : '---' },
+    { label: 'Phase Angle', value: telemetry ? `${telemetry.phaseAngle.toFixed(2)}°` : '---' },
+    { label: 'Xfmr Temp', value: telemetry ? `${temp.toFixed(1)} °C` : '---',
+      color: temp > 60 ? 'text-red-400' : temp > 50 ? 'text-amber-400' : undefined },
+  ];
+
+  return (
+    <div className="absolute top-4 right-4 w-80 z-50">
+      <div className="bg-slate-950/92 backdrop-blur-2xl border border-slate-700/60 shadow-2xl rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color, boxShadow: `0 0 10px ${status.color}50` }} />
+            <div>
+              <div className="text-sm font-black text-white tracking-wide">{meta.name}</div>
+              <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">{busId} · {meta.type}</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-all">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+
+        {/* Status */}
+        <div className="px-5 py-3">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-black uppercase tracking-wider ${
+            status.label === 'NOMINAL' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+            status.label === 'HEALING' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
+            'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse'
+          }`}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: status.color }} />
+            {status.label}
+          </div>
+        </div>
+
+        {/* Telemetry */}
+        <div className="px-5 pb-2">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Live Telemetry</div>
+          <div className="space-y-1">
+            {rows.map(r => (
+              <div key={r.label} className="flex justify-between items-center py-1.5 px-3 rounded-lg bg-white/[0.02] border border-white/[0.03]">
+                <span className="text-[11px] text-slate-500 uppercase tracking-wider">{r.label}</span>
+                <span className={`text-[11px] font-mono font-bold tabular-nums ${r.color || 'text-slate-200'}`}>{r.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Anomalies */}
+        <div className="px-5 py-3 border-t border-white/[0.04]">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Recent Anomalies ({busAlerts.length})</div>
+          {busAlerts.length === 0 ? (
+            <div className="text-[11px] text-slate-600 italic py-2">No active anomalies</div>
+          ) : (
+            <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+              {busAlerts.slice(0, 5).map((a, i) => (
+                <div key={i} className="flex items-start gap-2 py-1.5 px-3 rounded-lg bg-red-500/5 border border-red-500/10">
+                  <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${a.severity === 'CRITICAL' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-300">{a.title}</div>
+                    <div className="text-[9px] font-mono text-slate-600">{new Date(a.timestamp).toLocaleTimeString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Line flows */}
+        {telemetry && telemetry.lineFlows.length > 0 && (
+          <div className="px-5 py-3 border-t border-white/[0.04]">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Line Flows</div>
+            <div className="space-y-1">
+              {telemetry.lineFlows.map((lf, i) => (
+                <div key={i} className="flex justify-between items-center py-1 px-3 rounded-lg bg-white/[0.02] border border-white/[0.03]">
+                  <span className="text-[10px] font-mono text-slate-500">{lf.lineId}</span>
+                  <span className="text-[10px] font-mono text-slate-300 tabular-nums">{lf.activePowerFlow.toFixed(2)} MW</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -171,11 +319,32 @@ interface Props {
 }
 
 export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props) {
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+
   const telMap = useMemo(() => {
     const m = new Map<string, GridTelemetry>();
     for (const t of latestTelemetry) m.set(t.busId, t);
     return m;
   }, [latestTelemetry]);
+
+  const statusMap = useMemo(() => {
+    const m = new Map<string, { color: string; label: string }>();
+    for (const busId of Object.keys(BUS_POS)) m.set(busId, getNodeStatus(busId, alerts, shield));
+    return m;
+  }, [alerts, shield]);
+
+  const handleSelect = useCallback((busId: string) => {
+    setSelectedNode(prev => prev === busId ? null : busId);
+  }, []);
+
+  const handleCanvasClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const connectedLines = useMemo(() => {
+    if (!selectedNode) return new Set<string>();
+    return new Set(TX_LINES.filter(l => l.from === selectedNode || l.to === selectedNode).map(l => l.id));
+  }, [selectedNode]);
 
   return (
     <div className="relative w-full h-full min-h-[400px] rounded-xl overflow-hidden">
@@ -184,11 +353,11 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
         dpr={[1, 2]}
+        onPointerMissed={handleCanvasClick}
       >
         <color attach="background" args={['#060a14']} />
         <fog attach="fog" args={['#060a14', 40, 80]} />
 
-        {/* Lighting */}
         <ambientLight intensity={0.2} />
         <directionalLight color="#0ea5e9" position={[10, 10, 10]} intensity={1.5} />
         <pointLight position={[0, 12, 0]} intensity={0.5} color="#3b82f6" distance={40} />
@@ -196,7 +365,6 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
 
         <Stars radius={100} depth={50} count={2000} factor={3} fade speed={0.3} />
 
-        {/* High-tech floor grid */}
         <Grid
           position={[0, -2.5, 0]}
           args={[60, 60]}
@@ -211,41 +379,38 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
           infiniteGrid
         />
 
-        {/* Transmission lines */}
         {TX_LINES.map(l => (
-          <TransmissionLine key={l.id} lineId={l.id} shield={shield} alerts={alerts} />
+          <TransmissionLine key={l.id} lineId={l.id} shield={shield} alerts={alerts} dimmed={!!selectedNode && !connectedLines.has(l.id)} />
         ))}
 
-        {/* Bus nodes */}
         {Object.keys(BUS_POS).map(busId => (
           <SubstationNode
             key={busId}
             busId={busId}
             telemetry={telMap.get(busId)}
-            color={getNodeColor(busId, alerts, shield)}
+            status={statusMap.get(busId)!}
+            isSelected={selectedNode === busId}
+            isDimmed={!!selectedNode && selectedNode !== busId}
+            onSelect={handleSelect}
           />
         ))}
 
-        {/* Postprocessing: Bloom glow */}
         <EffectComposer>
-          <Bloom
-            luminanceThreshold={0.2}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-            intensity={1.5}
-          />
+          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} mipmapBlur intensity={1.5} />
         </EffectComposer>
 
-        <OrbitControls
-          enablePan={false}
-          enableZoom={true}
-          minDistance={15}
-          maxDistance={50}
-          maxPolarAngle={Math.PI / 2.2}
-          autoRotate
-          autoRotateSpeed={0.4}
-        />
+        <OrbitControls enablePan={false} enableZoom={true} minDistance={15} maxDistance={50} maxPolarAngle={Math.PI / 2.2} autoRotate={!selectedNode} autoRotateSpeed={0.4} />
       </Canvas>
+
+      {selectedNode && (
+        <NodeInspector
+          busId={selectedNode}
+          telemetry={telMap.get(selectedNode)}
+          status={statusMap.get(selectedNode)!}
+          alerts={alerts}
+          onClose={() => setSelectedNode(null)}
+        />
+      )}
     </div>
   );
 }
