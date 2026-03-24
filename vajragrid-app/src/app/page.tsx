@@ -125,7 +125,7 @@ export default function Home() {
         </div>
 
         {/* ── CENTER PANEL (col 4-9): 3D Topology + Analytics ── */}
-        <div className="col-span-6 h-full flex flex-col gap-4 min-h-0 overflow-hidden">
+        <div className="col-span-6 h-full flex flex-col gap-4 min-h-0 overflow-y-auto custom-scrollbar">
           {/* 3D Map — locked to fill available space */}
           <div className={`${glass} relative isolate flex-1 min-h-[300px] overflow-hidden`}>
             <div className="absolute top-4 left-5 z-10 flex items-center gap-3 pointer-events-none">
