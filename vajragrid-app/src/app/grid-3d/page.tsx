@@ -162,6 +162,7 @@ export default function Grid3DPage() {
             latestTelemetry={latestTelemetry}
             alerts={alerts}
             shield={shield}
+            activeAttacks={simulationState?.activeAttacks}
           />
         </Canvas3DErrorBoundary>
       </div>

@@ -151,7 +151,7 @@ function ChartContainer({ title, children }: { title: string; children: React.Re
     <div className="w-full h-48 sm:h-64 bg-zinc-950/50 p-2 sm:p-4 border border-slate-700 rounded shadow-inner overflow-hidden">
       <h3 className="text-xs sm:text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest pl-1">{title}</h3>
       <div className="w-full h-36 sm:h-48 min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           {children}
         </ResponsiveContainer>
       </div>

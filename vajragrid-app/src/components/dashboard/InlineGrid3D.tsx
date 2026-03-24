@@ -34,25 +34,22 @@ const TX_LINES = [
 ];
 
 /* ─── Helpers ──────────────────────────────────────────────── */
-function getNodeStatus(busId: string, alerts: ThreatAlert[], shield: ShieldData | null): { color: string; label: string } {
+function getNodeStatus(busId: string, alerts: ThreatAlert[], shield: ShieldData | null, attackedBuses?: Set<string>): { color: string; label: string } {
   if (shield?.isolatedBuses?.includes(busId)) return { color: '#f97316', label: 'ISOLATED' };
   if (shield?.activeEvents?.find(e => e.affectedBus === busId)) return { color: '#22d3ee', label: 'HEALING' };
-  // Only count alerts that directly target THIS bus (not spillover from coupling)
-  const a = alerts.filter(x =>
-    x.affectedAssets.includes(busId) && x.status === 'ACTIVE' &&
-    x.affectedAssets.length <= 2
-  );
-  if (a.some(x => x.severity === 'CRITICAL')) return { color: '#ef4444', label: 'CRITICAL' };
-  if (a.some(x => x.severity === 'HIGH')) return { color: '#f97316', label: 'ALERT' };
-  if (a.some(x => x.severity === 'MEDIUM')) return { color: '#eab308', label: 'WARNING' };
+  if (attackedBuses?.has(busId)) {
+    const a = alerts.filter(x => x.affectedAssets.includes(busId) && x.status === 'ACTIVE');
+    if (a.some(x => x.severity === 'CRITICAL')) return { color: '#ef4444', label: 'CRITICAL' };
+    return { color: '#f97316', label: 'ALERT' };
+  }
   return { color: '#3b82f6', label: 'NOMINAL' };
 }
 
-function getLineColor(lineId: string, shield: ShieldData | null, alerts: ThreatAlert[]): string {
+function getLineColor(lineId: string, shield: ShieldData | null, attackedBuses?: Set<string>): string {
   if (shield?.trippedBreakers?.includes(lineId)) return '#f97316';
   if (shield?.reroutedLines?.includes(lineId)) return '#22d3ee';
   const l = TX_LINES.find(x => x.id === lineId);
-  if (l && alerts.some(a => a.status === 'ACTIVE' && (a.affectedAssets.includes(l.from) || a.affectedAssets.includes(l.to)))) return '#ef4444';
+  if (l && attackedBuses && (attackedBuses.has(l.from) || attackedBuses.has(l.to))) return '#ef4444';
   return '#1e40af';
 }
 
@@ -185,11 +182,11 @@ function SubstationNode({ busId, telemetry, status, isSelected, isDimmed, onSele
 }
 
 /* ─── Transmission Line ────────────────────────────────────── */
-function TransmissionLine({ lineId, shield, alerts, dimmed }: { lineId: string; shield: ShieldData | null; alerts: ThreatAlert[]; dimmed: boolean }) {
+function TransmissionLine({ lineId, shield, dimmed, attackedBuses }: { lineId: string; shield: ShieldData | null; dimmed: boolean; attackedBuses?: Set<string> }) {
   const line = TX_LINES.find(l => l.id === lineId)!;
   const from = BUS_POS[line.from];
   const to = BUS_POS[line.to];
-  const color = getLineColor(lineId, shield, alerts);
+  const color = getLineColor(lineId, shield, attackedBuses);
   const isTripped = shield?.trippedBreakers?.includes(lineId);
 
   const points = useMemo<[number, number, number][]>(() => {
@@ -320,9 +317,10 @@ interface Props {
   latestTelemetry: GridTelemetry[];
   alerts: ThreatAlert[];
   shield: ShieldData | null;
+  activeAttacks?: { type: string; targetBus?: string }[];
 }
 
-export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props) {
+export default function InlineGrid3D({ latestTelemetry, alerts, shield, activeAttacks }: Props) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
 
@@ -337,6 +335,14 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
     };
   }, []);
 
+  const attackedBuses = useMemo(() => {
+    const set = new Set<string>();
+    if (activeAttacks) {
+      for (const a of activeAttacks) { if (a.targetBus) set.add(a.targetBus); }
+    }
+    return set;
+  }, [activeAttacks]);
+
   const telMap = useMemo(() => {
     const m = new Map<string, GridTelemetry>();
     for (const t of latestTelemetry) m.set(t.busId, t);
@@ -345,9 +351,9 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
 
   const statusMap = useMemo(() => {
     const m = new Map<string, { color: string; label: string }>();
-    for (const busId of Object.keys(BUS_POS)) m.set(busId, getNodeStatus(busId, alerts, shield));
+    for (const busId of Object.keys(BUS_POS)) m.set(busId, getNodeStatus(busId, alerts, shield, attackedBuses));
     return m;
-  }, [alerts, shield]);
+  }, [alerts, shield, attackedBuses]);
 
   const handleSelect = useCallback((busId: string) => {
     setSelectedNode(prev => prev === busId ? null : busId);
@@ -404,7 +410,7 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
         />
 
         {TX_LINES.map(l => (
-          <TransmissionLine key={l.id} lineId={l.id} shield={shield} alerts={alerts} dimmed={!!selectedNode && !connectedLines.has(l.id)} />
+          <TransmissionLine key={l.id} lineId={l.id} shield={shield} dimmed={!!selectedNode && !connectedLines.has(l.id)} attackedBuses={attackedBuses} />
         ))}
 
         {Object.keys(BUS_POS).map(busId => (

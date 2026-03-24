@@ -35,27 +35,24 @@ const TX_LINES = [
   { id: 'TL-06', from: 'BUS-002', to: 'BUS-003' },
 ];
 
-function busColor(id: string, alerts: ThreatAlert[], shield: ShieldData | null): string {
+function busColor(id: string, alerts: ThreatAlert[], shield: ShieldData | null, attackedBuses?: Set<string>): string {
   // Shield states take priority
   if (shield?.isolatedBuses?.includes(id)) return '#f97316'; // orange — isolated
   if (shield?.activeEvents?.find(e => e.affectedBus === id)) return '#22d3ee'; // cyan — healing
-
-  // Only count alerts that directly target THIS bus (not spillover from coupling)
-  const directAlerts = alerts.filter(x =>
-    x.affectedAssets.includes(id) && x.status === 'ACTIVE' &&
-    x.affectedAssets.length <= 2 // Broad system-wide alerts are not bus-specific
-  );
-  if (directAlerts.some(x => x.severity === 'CRITICAL')) return '#ef4444'; // red
-  if (directAlerts.some(x => x.severity === 'HIGH')) return '#f97316'; // orange
-  if (directAlerts.some(x => x.severity === 'MEDIUM')) return '#eab308'; // yellow
+  // Under active attack (from simulation engine — deterministic, not noisy)
+  if (attackedBuses?.has(id)) {
+    const directAlerts = alerts.filter(x => x.affectedAssets.includes(id) && x.status === 'ACTIVE');
+    if (directAlerts.some(x => x.severity === 'CRITICAL')) return '#ef4444'; // red
+    return '#f97316'; // orange — attacked but no critical alert yet
+  }
   return '#22c55e'; // green — nominal
 }
 
-function lineColor(id: string, shield: ShieldData | null, alerts: ThreatAlert[]): string {
+function lineColor(id: string, shield: ShieldData | null, attackedBuses?: Set<string>): string {
   if (shield?.trippedBreakers?.includes(id)) return '#f97316';
   if (shield?.reroutedLines?.includes(id)) return '#22d3ee';
   const l = TX_LINES.find(x => x.id === id);
-  if (l && alerts.some(a => a.status === 'ACTIVE' && (a.affectedAssets.includes(l.from) || a.affectedAssets.includes(l.to)))) return '#ef4444';
+  if (l && attackedBuses && (attackedBuses.has(l.from) || attackedBuses.has(l.to))) return '#ef4444';
   return '#22c55e';
 }
 
@@ -600,12 +597,12 @@ function Pylon({ position, color }: { position: [number, number, number]; color:
 // ═══════════════════════════════════════════════════════════════
 // Transmission Line (catenary + pylons + particles)
 // ═══════════════════════════════════════════════════════════════
-function TxLine({ line, shield, alerts, telMap }: {
+function TxLine({ line, shield, telMap, attackedBuses }: {
   line: typeof TX_LINES[0]; shield: ShieldData | null;
-  alerts: ThreatAlert[]; telMap: Map<string, GridTelemetry>;
+  telMap: Map<string, GridTelemetry>; attackedBuses: Set<string>;
 }) {
   const s = BUS_POS[line.from], e = BUS_POS[line.to];
-  const col = lineColor(line.id, shield, alerts);
+  const col = lineColor(line.id, shield, attackedBuses);
   const tripped = shield?.trippedBreakers?.includes(line.id);
   const rerouted = shield?.reroutedLines?.includes(line.id);
   const fromP = telMap.get(line.from)?.activePower ?? 0;
@@ -706,13 +703,13 @@ function Ground() {
 // ═══════════════════════════════════════════════════════════════
 // Bus Node dispatcher
 // ═══════════════════════════════════════════════════════════════
-function BusNode({ busId, telemetry, alerts, shield, onSelect, isSelected }: {
+function BusNode({ busId, telemetry, alerts, shield, onSelect, isSelected, attackedBuses }: {
   busId: string; telemetry?: GridTelemetry; alerts: ThreatAlert[]; shield: ShieldData | null;
-  onSelect?: (busId: string | null) => void; isSelected?: boolean;
+  onSelect?: (busId: string | null) => void; isSelected?: boolean; attackedBuses: Set<string>;
 }) {
   const pos = BUS_POS[busId];
   const meta = BUS_META[busId];
-  const col = busColor(busId, alerts, shield);
+  const col = busColor(busId, alerts, shield, attackedBuses);
   const isIso = shield?.isolatedBuses?.includes(busId);
   const groupRef = useRef<THREE.Group>(null);
   const hovered = useRef(false);
@@ -777,20 +774,16 @@ function CameraRig() {
 // ═══════════════════════════════════════════════════════════════
 // Main Scene
 // ═══════════════════════════════════════════════════════════════
-function GridScene({ telemetry, alerts, shield, selectedBus, onSelectBus }: {
+function GridScene({ telemetry, alerts, shield, selectedBus, onSelectBus, attackedBuses }: {
   telemetry: GridTelemetry[]; alerts: ThreatAlert[]; shield: ShieldData | null;
   selectedBus: string | null; onSelectBus: (busId: string | null) => void;
+  attackedBuses: Set<string>;
 }) {
   const telMap = useMemo(() => {
     const m = new Map<string, GridTelemetry>();
     for (const t of telemetry) m.set(t.busId, t);
     return m;
   }, [telemetry]);
-
-  const attacked = useMemo(() =>
-    alerts.filter(a => a.status === 'ACTIVE' && (a.severity === 'CRITICAL' || a.severity === 'HIGH'))
-      .flatMap(a => a.affectedAssets).filter((v, i, a) => a.indexOf(v) === i),
-    [alerts]);
 
   return (
     <>
@@ -805,19 +798,19 @@ function GridScene({ telemetry, alerts, shield, selectedBus, onSelectBus }: {
       {/* Accent lights at stations */}
       {Object.entries(BUS_POS).map(([id, pos]) => (
         <pointLight key={id} position={[pos[0], 5, pos[2]]} intensity={1.2}
-          color={busColor(id, alerts, shield)} distance={18} />
+          color={busColor(id, alerts, shield, attackedBuses)} distance={18} />
       ))}
 
       <Stars radius={120} depth={80} count={1500} factor={2.5} saturation={0.2} fade speed={0.3} />
       <Ground />
 
-      {TX_LINES.map(l => <TxLine key={l.id} line={l} shield={shield} alerts={alerts} telMap={telMap} />)}
+      {TX_LINES.map(l => <TxLine key={l.id} line={l} shield={shield} telMap={telMap} attackedBuses={attackedBuses} />)}
       {Object.keys(BUS_POS).map(id => (
         <BusNode key={id} busId={id} telemetry={telMap.get(id)} alerts={alerts} shield={shield}
-          onSelect={onSelectBus} isSelected={selectedBus === id} />
+          onSelect={onSelectBus} isSelected={selectedBus === id} attackedBuses={attackedBuses} />
       ))}
 
-      {attacked.map(id => {
+      {Array.from(attackedBuses).map(id => {
         const p = BUS_POS[id]; return p ? <Shockwave key={`a-${id}`} position={p} color="#ef4444" /> : null;
       })}
       {shield?.activeEvents?.map(e => {
@@ -833,14 +826,23 @@ function GridScene({ telemetry, alerts, shield, selectedBus, onSelectBus }: {
 // ═══════════════════════════════════════════════════════════════
 // Export
 // ═══════════════════════════════════════════════════════════════
-export default function Grid3DVisualization({ latestTelemetry, alerts, shield }: {
+export default function Grid3DVisualization({ latestTelemetry, alerts, shield, activeAttacks }: {
   latestTelemetry: GridTelemetry[]; alerts: ThreatAlert[]; shield: ShieldData | null;
+  activeAttacks?: { type: string; targetBus?: string }[];
 }) {
   const [selectedBus, setSelectedBus] = useState<string | null>(null);
 
+  const attackedBuses = useMemo(() => {
+    const set = new Set<string>();
+    if (activeAttacks) {
+      for (const a of activeAttacks) { if (a.targetBus) set.add(a.targetBus); }
+    }
+    return set;
+  }, [activeAttacks]);
+
   const selectedTel = selectedBus ? latestTelemetry.find(t => t.busId === selectedBus) : undefined;
   const selectedMeta = selectedBus ? BUS_META[selectedBus] : undefined;
-  const selectedColor = selectedBus ? busColor(selectedBus, alerts, shield) : '#22c55e';
+  const selectedColor = selectedBus ? busColor(selectedBus, alerts, shield, attackedBuses) : '#22c55e';
   const busAlerts = selectedBus
     ? alerts.filter(a => a.affectedAssets.includes(selectedBus) && a.status === 'ACTIVE') : [];
   const busShieldEvents = selectedBus && shield?.activeEvents
@@ -863,7 +865,7 @@ export default function Grid3DVisualization({ latestTelemetry, alerts, shield }:
           <div className="text-slate-500 text-sm">WebGL required</div></div>}
       >
         <GridScene telemetry={latestTelemetry} alerts={alerts} shield={shield}
-          selectedBus={selectedBus} onSelectBus={setSelectedBus} />
+          selectedBus={selectedBus} onSelectBus={setSelectedBus} attackedBuses={attackedBuses} />
       </Canvas>
 
       {/* ── Click-to-Inspect detail panel ── */}

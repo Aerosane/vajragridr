@@ -139,7 +139,7 @@ export default function Home() {
             </div>
             <div className="absolute inset-0 w-full h-full z-0">
               <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-zinc-600 text-sm font-mono">Initializing 3D Engine...</div>}>
-                <InlineGrid3D latestTelemetry={latestTelemetry} alerts={alerts} shield={shield ?? null} />
+                <InlineGrid3D latestTelemetry={latestTelemetry} alerts={alerts} shield={shield ?? null} activeAttacks={simulationState?.activeAttacks} />
               </Suspense>
             </div>
           </div>
