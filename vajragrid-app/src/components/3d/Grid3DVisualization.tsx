@@ -845,7 +845,12 @@ export default function Grid3DVisualization({ latestTelemetry, alerts, shield }:
       <Canvas camera={{ position: [28, 20, 34], fov: 45 }}
         gl={{ antialias: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false }}
         style={{ background: '#080d1a' }}
-        onCreated={({ gl }) => { gl.setClearColor('#080d1a'); }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#080d1a');
+          const canvas = gl.domElement;
+          canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); }, false);
+          canvas.addEventListener('webglcontextrestored', () => { gl.setClearColor('#080d1a'); }, false);
+        }}
         onPointerMissed={() => setSelectedBus(null)}
         fallback={<div className="w-full h-full flex items-center justify-center bg-[#080d1a]">
           <div className="text-slate-500 text-sm">WebGL required</div></div>}

@@ -351,9 +351,16 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
       <Canvas
         camera={{ position: [0, 40, 70], fov: 45 }}
         style={{ width: '100%', height: '100%' }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false }}
         dpr={[1, 1.5]}
         onPointerMissed={handleCanvasClick}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#09090b');
+          const canvas = gl.domElement;
+          canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); }, false);
+          canvas.addEventListener('webglcontextrestored', () => { gl.setClearColor('#09090b'); }, false);
+        }}
+        fallback={<div className="w-full h-full flex items-center justify-center bg-[#09090b]"><div className="text-zinc-500 text-sm">WebGL required</div></div>}
       >
         <color attach="background" args={['#09090b']} />
         <fog attach="fog" args={['#09090b', 40, 80]} />

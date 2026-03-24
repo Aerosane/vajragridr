@@ -126,7 +126,7 @@ export default function Grid3DPage() {
       </div>
 
       {/* 3D Canvas — fills remaining space */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 w-full">
         <Grid3DVisualization
           latestTelemetry={latestTelemetry}
           alerts={alerts}

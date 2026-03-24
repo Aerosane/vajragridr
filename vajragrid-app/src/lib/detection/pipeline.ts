@@ -11,6 +11,7 @@ import { StatisticalDetector } from './StatisticalEngine';
 import { classifyThreats } from './AlertClassifier';
 import { runMLDetection, isMLReady } from './MLDetector';
 import { processAlerts, tickHealing, resetShield, getShieldStatus } from '@/lib/healing';
+import { setOnBusHealedCallback } from '@/lib/healing/SelfHealingEngine';
 import { publish } from '@/lib/events/EventBus';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
 
@@ -50,6 +51,22 @@ export function ensureDetectionPipeline() {
   state.initialized = true;
 
   const engine = getSimulationEngine();
+
+  // When VajraShield heals a bus, auto-remove its attack from simulation
+  setOnBusHealedCallback((busId: string) => {
+    const simState = engine.getState();
+    const busAttacks = simState.activeAttacks.filter(a => a.targetBus === busId);
+    for (const a of busAttacks) {
+      engine.removeAttack(a.type, busId);
+    }
+    const updatedState = engine.getState();
+    publish('simulation_state', updatedState);
+    if (updatedState.activeAttacks.length === 0) {
+      state.alertHistory = [];
+      publish('clear_alerts', true);
+    }
+  });
+
   engine.setCallbacks({
     onTelemetry: (telemetry: GridTelemetry[]) => {
       state.latestTelemetry = telemetry;
