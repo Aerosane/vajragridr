@@ -36,13 +36,19 @@ const TX_LINES = [
 ];
 
 function busColor(id: string, alerts: ThreatAlert[], shield: ShieldData | null): string {
-  if (shield?.isolatedBuses?.includes(id)) return '#f97316';
-  if (shield?.activeEvents?.find(e => e.affectedBus === id)) return '#22d3ee';
-  const a = alerts.filter(x => x.affectedAssets.includes(id) && x.status === 'ACTIVE');
-  if (a.some(x => x.severity === 'CRITICAL')) return '#ef4444';
-  if (a.some(x => x.severity === 'HIGH')) return '#f97316';
-  if (a.some(x => x.severity === 'MEDIUM')) return '#eab308';
-  return '#22c55e';
+  // Shield states take priority
+  if (shield?.isolatedBuses?.includes(id)) return '#f97316'; // orange — isolated
+  if (shield?.activeEvents?.find(e => e.affectedBus === id)) return '#22d3ee'; // cyan — healing
+
+  // Only count alerts that directly target THIS bus (not spillover from coupling)
+  const directAlerts = alerts.filter(x =>
+    x.affectedAssets.includes(id) && x.status === 'ACTIVE' &&
+    x.affectedAssets.length <= 2 // Broad system-wide alerts are not bus-specific
+  );
+  if (directAlerts.some(x => x.severity === 'CRITICAL')) return '#ef4444'; // red
+  if (directAlerts.some(x => x.severity === 'HIGH')) return '#f97316'; // orange
+  if (directAlerts.some(x => x.severity === 'MEDIUM')) return '#eab308'; // yellow
+  return '#22c55e'; // green — nominal
 }
 
 function lineColor(id: string, shield: ShieldData | null, alerts: ThreatAlert[]): string {

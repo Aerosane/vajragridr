@@ -117,7 +117,15 @@ export function useSSEGridData() {
               break;
 
             case 'simulation_state':
-              if (data) setSimulationState(data as SimulationState);
+              if (data) {
+                const simData = data as SimulationState;
+                setSimulationState(simData);
+                // Clear stale alerts when simulation stops or has no active attacks
+                if (!simData.running) {
+                  setAlerts([]);
+                  seenAlertIds.current.clear();
+                }
+              }
               break;
 
             case 'shield':

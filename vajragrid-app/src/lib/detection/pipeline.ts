@@ -229,6 +229,9 @@ export function resetPipeline() {
   state.tickCount = 0;
   state.initialized = false;
   resetShield();
+  // Notify clients to clear stale alerts
+  publish('clear_alerts', true);
+  publish('shield', getShieldStatus());
 }
 
 export { getShieldStatus } from '@/lib/healing';

@@ -37,7 +37,11 @@ const TX_LINES = [
 function getNodeStatus(busId: string, alerts: ThreatAlert[], shield: ShieldData | null): { color: string; label: string } {
   if (shield?.isolatedBuses?.includes(busId)) return { color: '#f97316', label: 'ISOLATED' };
   if (shield?.activeEvents?.find(e => e.affectedBus === busId)) return { color: '#22d3ee', label: 'HEALING' };
-  const a = alerts.filter(x => x.affectedAssets.includes(busId) && x.status === 'ACTIVE');
+  // Only count alerts that directly target THIS bus (not spillover from coupling)
+  const a = alerts.filter(x =>
+    x.affectedAssets.includes(busId) && x.status === 'ACTIVE' &&
+    x.affectedAssets.length <= 2
+  );
   if (a.some(x => x.severity === 'CRITICAL')) return { color: '#ef4444', label: 'CRITICAL' };
   if (a.some(x => x.severity === 'HIGH')) return { color: '#f97316', label: 'ALERT' };
   if (a.some(x => x.severity === 'MEDIUM')) return { color: '#eab308', label: 'WARNING' };
