@@ -84,21 +84,29 @@ export function ensureDetectionPipeline() {
         return;
       }
 
-      // Layer 1: Rule-based detection
+      // Get buses currently under healing — skip detection on them
+      const healingStatus = getShieldStatus();
+      const healingBusIds = new Set([
+        ...healingStatus.isolatedBuses,
+        ...healingStatus.activeEvents.map(e => e.affectedBus),
+      ]);
+      const detectableTelemetry = telemetry.filter(t => !healingBusIds.has(t.busId));
+
+      // Layer 1: Rule-based detection (only on non-healing buses)
       const allRuleViolations = [];
-      for (const t of telemetry) {
+      for (const t of detectableTelemetry) {
         const prev = state.previousReadings.get(t.busId) || null;
         allRuleViolations.push(...runRules(t, prev));
       }
 
       // Layer 2: Physics consistency
-      const physicsViolations = runPhysicsChecks(telemetry);
+      const physicsViolations = runPhysicsChecks(detectableTelemetry);
 
       // Layer 3: Statistical anomalies
       const anomalies = [];
       const cusumAlerts = [];
       const correlations = new Map<string, number>();
-      for (const t of telemetry) {
+      for (const t of detectableTelemetry) {
         anomalies.push(...state.statDetector.getZScoreAnomalies(t.busId));
         cusumAlerts.push(...state.statDetector.getCUSUM(t.busId));
       }
@@ -112,14 +120,14 @@ export function ensureDetectionPipeline() {
       }
 
       // Fuse layers 1-3 → alerts
-      const alerts = classifyThreats(allRuleViolations, physicsViolations, { anomalies, cusumAlerts, correlations }, telemetry);
+      const alerts = classifyThreats(allRuleViolations, physicsViolations, { anomalies, cusumAlerts, correlations }, detectableTelemetry);
 
-      // Layer 4: ML anomaly detection (async, non-blocking)
-      runMLDetection(telemetry).then(mlResults => {
+      // Layer 4: ML anomaly detection (async, non-blocking — only on non-healing buses)
+      runMLDetection(detectableTelemetry).then(mlResults => {
         state.mlAnomalies = mlResults;
-        // Generate ML-specific alerts for anomalies
+        // Generate ML-specific alerts for anomalies (skip healing buses)
         for (const ml of mlResults) {
-          if (ml.isAnomaly && ml.confidence > 0.65) {
+          if (ml.isAnomaly && ml.confidence > 0.65 && !healingBusIds.has(ml.busId)) {
             const FEATURE_NAMES = ['voltage', 'frequency', 'activePower', 'reactivePower', 'voltageAngle', 'powerFactor'];
             const mlAlert: ThreatAlert = {
               id: `ml-${ml.busId}-${Date.now()}`,
