@@ -802,7 +802,7 @@ function GridScene({ telemetry, alerts, shield, selectedBus, onSelectBus }: {
           color={busColor(id, alerts, shield)} distance={18} />
       ))}
 
-      <Stars radius={120} depth={80} count={2500} factor={2.5} saturation={0.2} fade speed={0.3} />
+      <Stars radius={120} depth={80} count={1500} factor={2.5} saturation={0.2} fade speed={0.3} />
       <Ground />
 
       {TX_LINES.map(l => <TxLine key={l.id} line={l} shield={shield} alerts={alerts} telMap={telMap} />)}
@@ -844,6 +844,7 @@ export default function Grid3DVisualization({ latestTelemetry, alerts, shield }:
     <div className="w-full h-full relative">
       <Canvas camera={{ position: [28, 20, 34], fov: 45 }}
         gl={{ antialias: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false }}
+        dpr={[1, 1.5]}
         style={{ background: '#080d1a' }}
         onCreated={({ gl }) => {
           gl.setClearColor('#080d1a');

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react';
 import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Stars, Line, Grid, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -320,6 +320,18 @@ interface Props {
 
 export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+
+  // Force dispose WebGL context on unmount to free GPU for /grid-3d page
+  useEffect(() => {
+    return () => {
+      if (glRef.current) {
+        glRef.current.dispose();
+        glRef.current.forceContextLoss();
+        glRef.current = null;
+      }
+    };
+  }, []);
 
   const telMap = useMemo(() => {
     const m = new Map<string, GridTelemetry>();
@@ -355,6 +367,7 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
         dpr={[1, 1.5]}
         onPointerMissed={handleCanvasClick}
         onCreated={({ gl }) => {
+          glRef.current = gl;
           gl.setClearColor('#09090b');
           const canvas = gl.domElement;
           canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); }, false);

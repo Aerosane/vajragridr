@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback, Component, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSSEGridData } from '@/hooks/useSSEGridData';
@@ -13,6 +13,36 @@ const Grid3DVisualization = dynamic(
     </div>
   )}
 );
+
+/* Error boundary — catches WebGL context loss and offers retry */
+class Canvas3DErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: '' };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error.message };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#09090b] gap-4">
+          <div className="text-zinc-400 text-sm font-mono">3D engine crashed — WebGL context lost</div>
+          <button
+            onClick={() => this.setState({ hasError: false, errorMsg: '' })}
+            className="px-4 py-2 rounded text-xs font-bold uppercase bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function Grid3DPage() {
   const {
@@ -127,11 +157,13 @@ export default function Grid3DPage() {
 
       {/* 3D Canvas — fills remaining space */}
       <div className="flex-1 min-h-0 w-full">
-        <Grid3DVisualization
-          latestTelemetry={latestTelemetry}
-          alerts={alerts}
-          shield={shield}
-        />
+        <Canvas3DErrorBoundary>
+          <Grid3DVisualization
+            latestTelemetry={latestTelemetry}
+            alerts={alerts}
+            shield={shield}
+          />
+        </Canvas3DErrorBoundary>
       </div>
     </div>
   );
