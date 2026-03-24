@@ -6,7 +6,7 @@ import { OrbitControls, Stars, Line, Grid, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
-import type { ShieldData } from '@/hooks/usePollingGridData';
+import type { ShieldData } from '@/hooks/useSSEGridData';
 
 const BUS_POS: Record<string, [number, number, number]> = {
   'BUS-001': [0, 0, 0],
@@ -406,7 +406,7 @@ export default function InlineGrid3D({ latestTelemetry, alerts, shield }: Props)
         <NodeInspector
           busId={selectedNode}
           telemetry={telMap.get(selectedNode)}
-          status={statusMap.get(selectedNode)!}
+          status={statusMap.get(selectedNode) ?? { color: '#3b82f6', label: 'NOMINAL' }}
           alerts={alerts}
           onClose={() => setSelectedNode(null)}
         />

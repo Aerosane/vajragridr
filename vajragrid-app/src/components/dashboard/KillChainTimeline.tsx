@@ -20,6 +20,15 @@ const SHIELD_PHASES = [
   { id: 'RESTORED', label: 'Restored', icon: '✅', color: 'emerald' },
 ];
 
+const SHIELD_PHASE_COLORS: Record<string, { active: string; past: string }> = {
+  DETECTING: { active: 'bg-yellow-500 animate-pulse', past: 'bg-yellow-500/60' },
+  ISOLATING: { active: 'bg-red-500 animate-pulse', past: 'bg-red-500/60' },
+  REROUTING: { active: 'bg-cyan-500 animate-pulse', past: 'bg-cyan-500/60' },
+  MONITORING: { active: 'bg-amber-500 animate-pulse', past: 'bg-amber-500/60' },
+  RESTORING: { active: 'bg-blue-500 animate-pulse', past: 'bg-blue-500/60' },
+  RESTORED: { active: 'bg-emerald-500 animate-pulse', past: 'bg-emerald-500/60' },
+};
+
 interface Props {
   killChain: KillChainData | null;
   shield: ShieldData | null;
@@ -226,8 +235,8 @@ export default function KillChainTimeline({ killChain, shield, attackCount }: Pr
               const isPast = thisIdx < phaseIdx;
               return (
                 <div key={phase.id} className={`flex-1 rounded-sm h-1.5 transition-all duration-700 ${
-                  isActive ? `bg-${phase.color}-500 animate-pulse` :
-                  isPast ? `bg-${phase.color}-500/60` : 'bg-slate-800'
+                  isActive ? (SHIELD_PHASE_COLORS[phase.id]?.active ?? 'bg-slate-500 animate-pulse') :
+                  isPast ? (SHIELD_PHASE_COLORS[phase.id]?.past ?? 'bg-slate-500/60') : 'bg-slate-800'
                 }`} title={phase.label} />
               );
             })}

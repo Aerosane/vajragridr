@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Text, OrbitControls, Stars, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import type { GridTelemetry, ThreatAlert } from '@/lib/types';
-import type { ShieldData } from '@/hooks/usePollingGridData';
+import type { ShieldData } from '@/hooks/useSSEGridData';
 
 const V_NOM = 230;
 const F_NOM = 50;

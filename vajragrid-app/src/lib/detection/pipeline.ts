@@ -147,7 +147,32 @@ export function ensureDetectionPipeline() {
       }
       tickHealing();
       // Publish shield status after healing tick
-      publish('shield', getShieldStatus());
+      const shieldStatus = getShieldStatus();
+      publish('shield', shieldStatus);
+
+      // Publish kill_chain data so KillChainTimeline works in simulation mode
+      const simEngine = getSimulationEngine();
+      const simState = simEngine.getState();
+      if (simState.activeAttacks.length > 0 || alerts.length > 0) {
+        const layerResults = [
+          { layer: 'RULES', triggered: allRuleViolations.length > 0, count: allRuleViolations.length, timestamp: new Date().toISOString(), details: allRuleViolations.length > 0 ? `${allRuleViolations.length} rule violation(s)` : 'Clear' },
+          { layer: 'PHYSICS', triggered: physicsViolations.length > 0, count: physicsViolations.length, timestamp: new Date().toISOString(), details: physicsViolations.length > 0 ? `${physicsViolations.length} physics anomal(y/ies)` : 'Clear' },
+          { layer: 'STATISTICAL', triggered: anomalies.length > 0 || cusumAlerts.length > 0, count: anomalies.length + cusumAlerts.length, timestamp: new Date().toISOString(), details: (anomalies.length + cusumAlerts.length) > 0 ? `${anomalies.length} z-score, ${cusumAlerts.length} CUSUM` : 'Clear' },
+          { layer: 'ML', triggered: state.mlAnomalies.some(m => m.isAnomaly), count: state.mlAnomalies.filter(m => m.isAnomaly).length, timestamp: new Date().toISOString(), details: state.mlAnomalies.some(m => m.isAnomaly) ? `${state.mlAnomalies.filter(m => m.isAnomaly).length} anomal(y/ies)` : 'Clear' },
+        ];
+        publish('kill_chain', {
+          attacks: simState.activeAttacks.map((a: { type: string; targetBus?: string; intensity?: number }) => ({
+            type: a.type,
+            targetBus: a.targetBus || 'ALL',
+            intensity: a.intensity || 0.5,
+            startedAt: new Date().toISOString(),
+            elapsedTicks: 0,
+          })),
+          layers: layerResults,
+          alertCount: state.alertHistory.length,
+          shieldPhase: shieldStatus.activeEvents?.[0]?.phase || null,
+        });
+      }
     },
     onSystemState: (data) => {
       publish('system_state', data);

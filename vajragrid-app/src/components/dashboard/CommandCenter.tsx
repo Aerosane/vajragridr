@@ -12,7 +12,7 @@ import MQTTPacketInspector from './MQTTPacketInspector';
 import MitreAttackMatrix from './MitreAttackMatrix';
 import ConfidenceRadar from './ConfidenceRadar';
 import { SystemState, ThreatAlert, GridTelemetry } from '@/lib/types';
-import type { ShieldData } from '@/hooks/usePollingGridData';
+import type { ShieldData } from '@/hooks/useSSEGridData';
 import type { KillChainData, MQTTPacket, LiveAttack } from '@/hooks/useSSEGridData';
 
 const InlineGrid3D = dynamic(() => import('./InlineGrid3D'), { ssr: false });

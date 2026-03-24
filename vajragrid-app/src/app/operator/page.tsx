@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import AttackControlPanel from '@/components/operator/AttackControlPanel';
 import HealingTimeline from '@/components/dashboard/HealingTimeline';
-import { usePollingGridData } from '@/hooks/usePollingGridData';
+import { useSSEGridData } from '@/hooks/useSSEGridData';
 import { BUS_NAMES } from '@/lib/constants';
 import type { AttackType } from '@/lib/types';
 
@@ -27,7 +27,7 @@ export default function OperatorPage() {
     stopSimulation,
     resetSimulation,
     injectAttack,
-  } = usePollingGridData();
+  } = useSSEGridData();
 
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoStep, setDemoStep] = useState(-1);

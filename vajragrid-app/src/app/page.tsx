@@ -61,10 +61,8 @@ export default function Home() {
 
   const [rightTab, setRightTab] = useState<RightTab>('attack');
 
-  const isLiveMode = liveAttacks !== undefined && (
-    liveAttacks.length > 0 ||
-    (telemetryHistory.size > 0 && !simulationState?.running)
-  );
+  // Live mode only when there are actual MQTT-ingested attacks
+  const isLiveMode = liveAttacks.length > 0;
 
   const latestTelemetry = useMemo<GridTelemetry[]>(() => {
     return Array.from(telemetryHistory.values())
@@ -162,7 +160,7 @@ export default function Home() {
         </div>
 
         {/* ── RIGHT PANEL (col 10-12): Tabbed Controls ── */}
-        <div className="col-span-3 h-full flex flex-col gap-4 overflow-hidden pl-1">
+        <div className="col-span-3 h-full flex flex-col gap-4 overflow-y-auto custom-scrollbar pl-1">
           {/* Tab bar */}
           <div className="flex items-center gap-1 bg-zinc-900/50 border border-white/5 rounded-xl p-1 shrink-0">
             {RIGHT_TABS.map(({ id, icon: Icon, label }) => (

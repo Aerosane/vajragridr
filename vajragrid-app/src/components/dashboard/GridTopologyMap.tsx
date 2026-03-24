@@ -15,7 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { GridTelemetry, ThreatAlert, BusType, LineFlow } from '@/lib/types';
-import type { ShieldData } from '@/hooks/usePollingGridData';
+import type { ShieldData } from '@/hooks/useSSEGridData';
 
 // ─── Constants ─────────────────────────────────────────────────
 
